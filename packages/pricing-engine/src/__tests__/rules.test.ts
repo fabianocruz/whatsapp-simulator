@@ -175,13 +175,24 @@ describe('R8 — volume tiers inside a conversation', () => {
   it('applies the tier the business is already in, and advances within the conversation', () => {
     const priced = priceConversation([template(0, 'utility'), template(1, 'utility')], {
       asOf: TODAY,
-      monthlyContext: { billableVolumeThisMonth: { utility: 9_999 } },
+      monthlyContext: { billableVolumeThisMonth: { utility: 249_999 } },
     });
     expect(priced.decisions[0]!.unitRate).toBe(0.035);
     expect(priced.decisions[0]!.tierApplied).toBe(0);
-    // The 10,000th billable message of the month crosses into the -5% tier.
+    // Meta's first utility tier ends at 250,000 messages; the next one crosses into -5%.
     expect(priced.decisions[1]!.unitRate).toBe(0.0333);
     expect(priced.decisions[1]!.tierApplied).toBe(1);
+  });
+
+  it('uses the authentication table for authentication, not the utility one', () => {
+    // 250,000 is past utility's first threshold but well inside authentication's, which
+    // runs to 500,000. Sharing one table between the categories would misprice this.
+    const priced = priceConversation([template(0, 'authentication')], {
+      asOf: TODAY,
+      monthlyContext: { billableVolumeThisMonth: { authentication: 250_000 } },
+    });
+    expect(priced.decisions[0]!.unitRate).toBe(0.035);
+    expect(priced.decisions[0]!.tierApplied).toBe(0);
   });
 });
 

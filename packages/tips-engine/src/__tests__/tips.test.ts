@@ -138,18 +138,26 @@ describe('T5 — collect with Flows', () => {
 
 describe('T6 — near the next tier', () => {
   it('fires when projected volume sits just under a threshold', () => {
-    // 1 billable utility per conversation x 9,500 conversations = 9,500 utility messages,
-    // 500 short of the placeholder 10,000 threshold (within 10% of it).
+    // 1 billable utility per conversation x 240,000 conversations = 240,000 utility
+    // messages, 10,000 short of Meta's real 250,000 threshold (within 10% of it).
     const scenario = getScenario('worked-example-spec');
-    const result = analyzeConversation(scenario.messages, { asOf: TODAY, conversationsPerMonth: 9_500 });
+    const result = analyzeConversation(scenario.messages, { asOf: TODAY, conversationsPerMonth: 240_000 });
     const t6 = result.tips.find((t) => t.ruleId === 'T6')!;
-    expect(t6.titlePt).toContain('500 mensagens');
-    expect(t6.estimatedSavingMicros).toBe((35_000 - 33_300) * 9_500);
+    expect(t6.titlePt).toContain('10.000 mensagens');
+    expect(t6.estimatedSavingMicros).toBe((35_000 - 33_300) * 240_000);
   });
 
   it('stays quiet when volume is nowhere near a threshold', () => {
     const scenario = getScenario('worked-example-spec');
     const result = analyzeConversation(scenario.messages, { asOf: TODAY, conversationsPerMonth: 100 });
+    expect(ids(result.tips)).not.toContain('T6');
+  });
+
+  it('measures distance against the category’s own table', () => {
+    // 240,000 is 10,000 from utility's first threshold but 260,000 from authentication's,
+    // so the same volume fires for one category and not the other.
+    const otp = getScenario('otp-authentication');
+    const result = analyzeConversation(otp.messages, { asOf: TODAY, conversationsPerMonth: 80_000 });
     expect(ids(result.tips)).not.toContain('T6');
   });
 

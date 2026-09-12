@@ -39,10 +39,18 @@ describe('price command', () => {
     expect(out).toContain('R$ 0,4267');
   });
 
-  it('always warns that the shipped tier thresholds are placeholders', async () => {
+  it('prints no data warnings now that every shipped number is sourced', async () => {
     const { out } = await capture(() => runPrice({ ...base, scenario: 'worked-example-spec' }));
-    expect(out).toContain('Avisos sobre os dados');
-    expect(out).toContain('placeholder');
+    expect(out).not.toContain('Avisos sobre os dados');
+  });
+
+  it('always prints the educational-simulation disclaimer, warnings or not', async () => {
+    // This line is the one thing that must never be conditional: the tool models Meta's
+    // rules, it does not bill anyone.
+    for (const locale of ['pt', 'en'] as const) {
+      const { out } = await capture(() => runPrice({ ...base, locale, scenario: 'otp-authentication' }));
+      expect(out).toContain(locale === 'pt' ? 'A cobranca oficial e a da Meta.' : 'The official bill is Meta');
+    }
   });
 
   it('emits machine-readable output with --json', async () => {
@@ -57,8 +65,8 @@ describe('price command', () => {
       runPrice({ ...base, scenario: 'worked-example-spec', conversationsPerMonth: 30_000 }),
     );
     expect(out).toContain('Projecao mensal');
-    // 30,000 marketing + the 30,000 utility split across the placeholder tiers.
-    expect(out).toContain('R$ 1.007,00');
+    // 30,000 utility sits inside Meta's first tier: flat list rate, 30,000 x 0,0350.
+    expect(out).toContain('R$ 1.050,00');
   });
 
   it('honours --locale en', async () => {

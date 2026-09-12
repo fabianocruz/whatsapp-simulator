@@ -96,11 +96,21 @@ Todo preco volta com um trace: ruleset, regra, janela, rate, tier, reason code e
 
 ## Precisao dos dados
 
-Os rates e os percentuais de desconto vem da spec citando o rate card oficial em BRL, e
-ainda **nao** foram conferidos contra a fonte primaria da Meta. Os **limites de volume por
-tier sao placeholder**, sem fonte. Ambos estao marcados no JSON (`ratesVerified`,
-`tiersVerified`), aparecem como aviso no CLI e na interface, e `assertReleaseReady()` falha
-enquanto existirem, e o CI roda essa checagem. Ver [CONTRIBUTING.md](./CONTRIBUTING.md).
+Rates e limites de volume vem da **fonte primaria da Meta**: o endpoint publico que a
+propria calculadora oficial de pricing consome. `scripts/fetch-rate-card.mjs` regenera o
+rate card a partir dele, e `--check` falha se o que esta versionado divergir do que a Meta
+publica hoje.
+
+```bash
+node scripts/fetch-rate-card.mjs --market BR --currency BRL --check
+```
+
+Todo numero sem fonte fica marcado no JSON (`ratesVerified`, `tiersVerified`), vira aviso
+no CLI e na interface, e `assertReleaseReady()` falha enquanto existir. Hoje o dataset
+passa nessa checagem. Ver [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+Uma ressalva que o dado nao cobre: impostos brasileiros podem incidir sobre estes valores,
+e o rate card da Meta nao os inclui.
 
 ## Desvios da spec de engenharia v2
 

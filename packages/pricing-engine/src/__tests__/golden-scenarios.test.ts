@@ -57,20 +57,51 @@ describe('acceptance criteria', () => {
     }
   });
 
-  it('#3 — 30,000 billable utility messages in a month are priced across graduated tiers', () => {
+  it('#3 — 30,000 billable utility messages in a month are priced through the tier table', () => {
     const projection = projectMonthly({ utility: 30_000 }, { asOf: CURRENT_AS_OF, market: 'BR', currency: 'BRL' });
     const utility = projection.categories.find((c) => c.category === 'utility')!;
 
-    // Placeholder thresholds (see the rate card's tiersVerified=false): 10k at list rate,
-    // 15k at -5%, 5k at -10%. Update this expectation when the official thresholds land.
+    // The spec wrote this criterion against placeholder thresholds. Meta's real first
+    // utility tier runs to 250,000 messages, so 30,000 sits entirely inside it and the
+    // correct answer is the flat list rate. The tier table is still what produced it.
+    expect(utility.slices.map((s) => [s.messages, s.rate])).toEqual([[30_000, 0.035]]);
+    expect(utility.amountMicros).toBe(30_000 * 35_000);
+    expect(utility.amount).toBe(1050);
+    expect(utility.effectiveRate).toBe(0.035);
+  });
+
+  it('#3b — 3,000,000 utility messages are split across the first three real tiers', () => {
+    const projection = projectMonthly({ utility: 3_000_000 }, { asOf: CURRENT_AS_OF, market: 'BR', currency: 'BRL' });
+    const utility = projection.categories.find((c) => c.category === 'utility')!;
+
     expect(utility.slices.map((s) => [s.messages, s.rate])).toEqual([
-      [10_000, 0.035],
-      [15_000, 0.0333],
-      [5_000, 0.0315],
+      [250_000, 0.035],
+      [1_750_000, 0.0333],
+      [1_000_000, 0.0315],
     ]);
-    expect(utility.amountMicros).toBe(10_000 * 35_000 + 15_000 * 33_300 + 5_000 * 31_500);
-    expect(utility.amount).toBe(1007);
-    expect(utility.effectiveRate).toBeCloseTo(0.0335667, 6);
+    // Graduated, not cliff-based: 98,525 rather than 3,000,000 x 0.0315 = 94,500.
+    expect(utility.amountMicros).toBe(250_000 * 35_000 + 1_750_000 * 33_300 + 1_000_000 * 31_500);
+    expect(utility.amount).toBe(98_525);
+    expect(utility.effectiveRate).toBeCloseTo(0.0328417, 6);
+  });
+
+  it('#3c — authentication reaches each discount later than utility', () => {
+    // Same 3,000,000 messages, different category: authentication's first tier runs to
+    // 500,000 and its second to 3,000,000, so it never reaches the -10% rate here.
+    const projection = projectMonthly(
+      { authentication: 3_000_000 },
+      { asOf: CURRENT_AS_OF, market: 'BR', currency: 'BRL' },
+    );
+    const auth = projection.categories.find((c) => c.category === 'authentication')!;
+
+    expect(auth.slices.map((s) => [s.messages, s.rate])).toEqual([
+      [500_000, 0.035],
+      [2_500_000, 0.0333],
+    ]);
+    expect(auth.amountMicros).toBe(500_000 * 35_000 + 2_500_000 * 33_300);
+    expect(auth.amount).toBe(100_750);
+    // Cheaper for utility than for authentication at identical volume.
+    expect(auth.amountMicros).toBeGreaterThan(98_525_000_000);
   });
 
   it('#4 — 1,500 service messages under the 2026-10-01 ruleset: 1,000 free, 500 billed', () => {

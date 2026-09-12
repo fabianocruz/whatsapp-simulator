@@ -5,16 +5,36 @@ o que cria confianca e o historico de regras versionado, testado e explicavel.
 
 ## Contribuindo um rate card
 
-1. Crie `packages/pricing-data/data/rate-cards/<market>-<CURRENCY>/<YYYY-MM-DD>.json`
-   usando `br-BRL/2026-07-01.json` como modelo. O nome do arquivo e a data de vigencia.
-2. Preencha `sourceUrl` com a **fonte primaria**: a pagina de pricing da Meta ou o rate
-   card oficial. README de terceiro nao serve como fonte: use para achar o numero, nao para
-   cita-lo.
-3. Marque `ratesVerified: true` **apenas** se voce conferiu cada rate na fonte primaria.
-   Mesma regra para `tiersVerified` nos limites de volume.
-4. Registre o arquivo em `packages/pricing-data/src/loader.ts` (uma linha em `RATE_CARDS`).
-5. Rode `pnpm test`. Os testes de dados checam que os tiers sao contiguos, ordenados,
+Na maioria dos casos voce **nao precisa digitar numero nenhum**. A Meta serve os rates e os
+limites de volume por um endpoint publico, o mesmo que a calculadora oficial consome, e o
+script puxa de la:
+
+```bash
+node scripts/fetch-rate-card.mjs --market MX --currency MXN --effective-from 2026-07-01
+```
+
+Depois disso:
+
+1. Registre o arquivo em `packages/pricing-data/src/loader.ts` (uma linha em `RATE_CARDS`).
+2. Se o mercado for novo, adicione nome e codigo de pais em `MARKET_NAMES` e
+   `CALLING_CODES` no script.
+3. Rode `pnpm test`. Os testes de dados checam que os tiers sao contiguos, ordenados,
    abertos no topo e coerentes com os percentuais de desconto declarados.
+
+Para conferir se o que esta versionado ainda bate com o que a Meta publica hoje:
+
+```bash
+node scripts/fetch-rate-card.mjs --market BR --currency BRL --check
+```
+
+Se precisar preencher a mao, num mercado que o endpoint nao cubra, use `sourceUrl` com a
+**fonte primaria** e marque `ratesVerified`/`tiersVerified` como `true` apenas se voce
+conferiu cada numero nela. README de terceiro serve para achar o numero, nunca para cita-lo.
+
+Um detalhe que o script trata e que e facil errar a mao: a Meta publica faixas inclusivas
+(`1..250000`, `250001..2000000`), e o motor trabalha com posicoes semiabertas, onde a
+primeira mensagem cobrada do mes esta na posicao 0. Um `min_volume` de 250001 vira um
+limite inferior exclusivo de 250000.
 
 Se um card antigo sai de vigencia, preencha o `effectiveTo` dele em vez de apagar o arquivo:
 o "rules as of" do simulador precisa conseguir voltar no tempo.

@@ -26,9 +26,9 @@ describe('projectMonthly', () => {
     expect(projection.categories.map((c) => c.category)).toEqual(['utility']);
   });
 
-  it('surfaces the unverified-threshold warning so the UI can say so', () => {
+  it('raises no data warnings now that the thresholds are sourced from Meta', () => {
     const projection = projectMonthly({ utility: 30_000 }, { asOf: TODAY });
-    expect(projection.warnings.some((w) => w.code === 'TIERS_UNVERIFIED')).toBe(true);
+    expect(projection.warnings).toEqual([]);
   });
 
   it('treats a fractional phone-number count as at least one number', () => {
@@ -91,7 +91,7 @@ describe('conversation scaled into a month', () => {
     const marketing = projection.categories.find((c) => c.category === 'marketing')!;
     const utility = projection.categories.find((c) => c.category === 'utility')!;
     expect(marketing.amountMicros).toBe(30_000 * 321_700);
-    // Same 30,000 utility split the acceptance test pins.
-    expect(utility.amount).toBe(1007);
+    // 30,000 utility sits inside Meta's first tier, so it prices at the flat list rate.
+    expect(utility.amount).toBe(1050);
   });
 });

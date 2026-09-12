@@ -1,6 +1,9 @@
 {
   "market": "BR",
-  "marketName": { "pt": "Brasil", "en": "Brazil" },
+  "marketName": {
+    "pt": "Brasil",
+    "en": "Brazil"
+  },
   "callingCode": "+55",
   "currency": "BRL",
   "effectiveFrom": "2026-07-01",
@@ -10,36 +13,96 @@
     "utility": 0.035,
     "authentication": 0.035
   },
-  "ratesVerified": false,
+  "ratesVerified": true,
   "volumeTiers": [
     {
       "category": "utility",
-      "tiersVerified": false,
+      "tiersVerified": true,
       "tiers": [
-        { "from": 0, "to": 10000, "discountPct": 0, "rate": 0.035 },
-        { "from": 10000, "to": 25000, "discountPct": 5, "rate": 0.0333 },
-        { "from": 25000, "to": 50000, "discountPct": 10, "rate": 0.0315 },
-        { "from": 50000, "to": 100000, "discountPct": 15, "rate": 0.0298 },
-        { "from": 100000, "to": 250000, "discountPct": 20, "rate": 0.028 },
-        { "from": 250000, "to": null, "discountPct": 25, "rate": 0.0263 }
+        {
+          "from": 0,
+          "to": 250000,
+          "discountPct": 0,
+          "rate": 0.035
+        },
+        {
+          "from": 250000,
+          "to": 2000000,
+          "discountPct": 5,
+          "rate": 0.0333
+        },
+        {
+          "from": 2000000,
+          "to": 17000000,
+          "discountPct": 10,
+          "rate": 0.0315
+        },
+        {
+          "from": 17000000,
+          "to": 35000000,
+          "discountPct": 15,
+          "rate": 0.0298
+        },
+        {
+          "from": 35000000,
+          "to": 70000000,
+          "discountPct": 20,
+          "rate": 0.028
+        },
+        {
+          "from": 70000000,
+          "to": null,
+          "discountPct": 25,
+          "rate": 0.0263
+        }
       ]
     },
     {
       "category": "authentication",
-      "tiersVerified": false,
+      "tiersVerified": true,
       "tiers": [
-        { "from": 0, "to": 10000, "discountPct": 0, "rate": 0.035 },
-        { "from": 10000, "to": 25000, "discountPct": 5, "rate": 0.0333 },
-        { "from": 25000, "to": 50000, "discountPct": 10, "rate": 0.0315 },
-        { "from": 50000, "to": 100000, "discountPct": 15, "rate": 0.0298 },
-        { "from": 100000, "to": 250000, "discountPct": 20, "rate": 0.028 },
-        { "from": 250000, "to": null, "discountPct": 25, "rate": 0.0263 }
+        {
+          "from": 0,
+          "to": 500000,
+          "discountPct": 0,
+          "rate": 0.035
+        },
+        {
+          "from": 500000,
+          "to": 3000000,
+          "discountPct": 5,
+          "rate": 0.0333
+        },
+        {
+          "from": 3000000,
+          "to": 5250000,
+          "discountPct": 10,
+          "rate": 0.0315
+        },
+        {
+          "from": 5250000,
+          "to": 10000000,
+          "discountPct": 15,
+          "rate": 0.0298
+        },
+        {
+          "from": 10000000,
+          "to": 20000000,
+          "discountPct": 20,
+          "rate": 0.028
+        },
+        {
+          "from": 20000000,
+          "to": null,
+          "discountPct": 25,
+          "rate": 0.0263
+        }
       ]
     }
   ],
-  "sourceUrl": "https://chatmaxima.com/whatsapp-api-pricing/brazil/",
+  "sourceUrl": "https://whatsappbusiness.com/products/platform-pricing/",
   "notes": {
-    "pt": "Rate card BRL do Brasil, vigente desde 01/07/2026. Os RATES (0,3217 / 0,0350) e os PERCENTUAIS de desconto (-5% a -25%) vem da spec, citando o rate card oficial em BRL; ainda nao foram conferidos contra a fonte primaria da Meta -> ratesVerified=false. Os THRESHOLDS de mensagens por tier sao PLACEHOLDER e nao tem fonte -> tiersVerified=false. Impostos brasileiros podem incidir sobre estes valores.",
-    "en": "Brazil BRL rate card, effective 2026-07-01. RATES (0.3217 / 0.0350) and discount PERCENTAGES (-5% to -25%) come from the spec citing the official BRL rate card; not yet checked against Meta's primary source -> ratesVerified=false. Message-count THRESHOLDS per tier are PLACEHOLDERS with no source -> tiersVerified=false. Brazilian taxes may apply on top."
+    "pt": "Rate card oficial BR/BRL, extraido de https://whatsappbusiness.com/products/platform-pricing/ por scripts/fetch-rate-card.mjs. Impostos brasileiros podem incidir sobre estes valores.",
+    "en": "Official BR/BRL rate card, pulled from https://whatsappbusiness.com/products/platform-pricing/ by scripts/fetch-rate-card.mjs. Brazilian taxes may apply on top of these amounts."
   }
 }
