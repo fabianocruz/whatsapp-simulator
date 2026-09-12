@@ -63,7 +63,18 @@ function parseCurrency(value: string | undefined): Currency | undefined {
 }
 
 export async function main(argv: readonly string[]): Promise<number> {
-  const [command = 'price', ...rest] = argv;
+  // `pnpm cli -- price ...` forwards the separator itself, so the argv we receive starts
+  // with a literal "--". Dropping leading separators makes the documented invocation work
+  // and costs nothing for a direct `dyvit-wa-sim price ...`.
+  const cleaned = [...argv];
+  while (cleaned[0] === '--') cleaned.shift();
+
+  // A leading flag means the command was omitted and `price`, the default, is intended:
+  // `dyvit-wa-sim --scenario otp` has to work, not die on "unknown command --scenario".
+  const first = cleaned[0];
+  const commandOmitted = first === undefined || first.startsWith('-');
+  const command = commandOmitted ? 'price' : first;
+  const rest = commandOmitted ? cleaned : cleaned.slice(1);
 
   if (command === '--help' || command === '-h' || command === 'help') {
     process.stdout.write(HELP);
