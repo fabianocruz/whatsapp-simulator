@@ -70,6 +70,25 @@ pnpm typecheck
 pnpm dev:web
 ```
 
+### Se o repo estiver dentro de uma pasta sincronizada (Google Drive, Dropbox, iCloud)
+
+Opcional, e so afeta a sua maquina: apontar `node_modules` para o disco local deixa o
+`pnpm install` cerca de 8x mais rapido, porque a pasta sincronizada tenta subir para a
+nuvem cada um dos milhares de arquivos.
+
+```bash
+LOCAL="$HOME/.pnpm-node-modules/dyvit-whatsapp-simulator/node_modules"
+rm -rf node_modules && mkdir -p "$LOCAL" && ln -s "$LOCAL" node_modules
+pnpm install
+```
+
+O caminho de destino **precisa terminar em `node_modules`**. O `require-hook` do Next
+resolve pelo realpath, entao um alvo com outro nome faz o `next build` quebrar com
+`Cannot find module 'styled-jsx/package.json'` — o vitest e o tsc nao quebram, porque
+usam resolvers que preservam o symlink.
+
+Para desfazer: `rm node_modules && pnpm install`.
+
 ## Calendario de precos
 
 A Meta so muda preco em 01/01, 01/04, 01/07 e 01/10, com aviso minimo de 1 mes para rate

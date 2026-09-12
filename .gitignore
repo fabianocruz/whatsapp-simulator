@@ -1,4 +1,6 @@
-node_modules/
+# No trailing slash: with node_modules symlinked to local disk (see CONTRIBUTING),
+# a directory-only pattern would leave the symlink itself untracked-but-visible.
+node_modules
 dist/
 .next/
 out/
