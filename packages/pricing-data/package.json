@@ -3,6 +3,13 @@
   "version": "0.1.0",
   "description": "Versioned WhatsApp Business Platform rate cards and rulesets as open data.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fabianocruz/whatsapp-simulator.git",
+    "directory": "packages/pricing-data"
+  },
+  "homepage": "https://github.com/fabianocruz/whatsapp-simulator#readme",
+  "bugs": "https://github.com/fabianocruz/whatsapp-simulator/issues",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -10,7 +17,10 @@
     ".": "./src/index.ts",
     "./data/*": "./data/*"
   },
-  "files": ["src", "data"],
+  "files": [
+    "src",
+    "data"
+  ],
   "scripts": {
     "check": "vitest run --root ../.. packages/pricing-data"
   }

@@ -4,6 +4,11 @@
   "version": "0.1.0",
   "description": "Cost-aware WhatsApp development environment: phone-frame emulator + deterministic pricing engine + optimization tips.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fabianocruz/whatsapp-simulator.git"
+  },
+  "homepage": "https://github.com/fabianocruz/whatsapp-simulator#readme",
   "type": "module",
   "packageManager": "pnpm@9.12.3",
   "engines": {

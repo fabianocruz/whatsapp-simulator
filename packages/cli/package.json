@@ -3,9 +3,20 @@
   "version": "0.1.0",
   "description": "dyvit-wa-sim: price a WhatsApp conversation scenario from the command line, or run a local Cloud API emulator.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fabianocruz/whatsapp-simulator.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/fabianocruz/whatsapp-simulator#readme",
+  "bugs": "https://github.com/fabianocruz/whatsapp-simulator/issues",
   "type": "module",
-  "bin": { "dyvit-wa-sim": "./dist/cli.js" },
-  "files": ["dist"],
+  "bin": {
+    "dyvit-wa-sim": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "tsx src/cli.ts",
     "build": "tsup src/cli.ts --format esm --clean --out-dir dist --banner.js=\"#!/usr/bin/env node\""
