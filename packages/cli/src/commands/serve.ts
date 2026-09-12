@@ -234,7 +234,7 @@ export async function runServe(options: ServeOptions): Promise<number> {
   const log = options.log ?? ((line: string) => process.stdout.write(`${line}\n`));
   log(`dyvit-wa-sim emulator on http://${host}:${options.port}`);
   log(`  Graph base URL:  http://${host}:${options.port}/v22.0`);
-  log(`  webhooks:        ${options.webhookUrl ?? '(not configured — inspect GET /_sim/webhooks)'}`);
+  log(`  webhooks:        ${options.webhookUrl ?? '(not configured; inspect GET /_sim/webhooks)'}`);
   log(`  priced state:    GET http://${host}:${options.port}/_sim/state`);
   log('  no real messages are sent; the official bill is Meta’s.');
 

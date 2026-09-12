@@ -5,7 +5,7 @@ import { runServe } from './commands/serve.js';
 import type { Locale } from './format.js';
 import type { Currency } from '@dyvit/whatsapp-pricing';
 
-const HELP = `dyvit-wa-sim — WhatsApp Business Platform cost simulator
+const HELP = `dyvit-wa-sim · WhatsApp Business Platform cost simulator
 
 Usage
   dyvit-wa-sim price [options]      price a conversation scenario

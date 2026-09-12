@@ -14,13 +14,20 @@ export interface ExplanationContext {
   allowanceRemaining?: number | null;
   /** Total monthly service allowance, for the allowance codes. */
   allowanceTotal?: number | null;
+  /**
+   * Whether the monthly allowance was actually consulted for this message. False when the
+   * caller passed no `monthlyContext`, which is the default: the conversation-level
+   * taximeter shows list rates and the allowance lives in the monthly projection. Without
+   * this flag a list-rate charge would claim the allowance had run out.
+   */
+  allowanceEvaluated?: boolean;
 }
 
 /** Renders an ISO instant as a short local-ish time, e.g. "13:42 de 12/09". */
 function shortTime(iso: string | null | undefined, locale: 'pt-BR' | 'en-US'): string {
-  if (!iso) return '—';
+  if (!iso) return 'n/a';
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return '—';
+  if (Number.isNaN(date.getTime())) return 'n/a';
   return new Intl.DateTimeFormat(locale, {
     day: '2-digit',
     month: '2-digit',
@@ -31,7 +38,7 @@ function shortTime(iso: string | null | undefined, locale: 'pt-BR' | 'en-US'): s
 }
 
 function money(ctx: ExplanationContext, locale: 'pt-BR' | 'en-US'): string {
-  if (ctx.rate === null || ctx.rate === undefined) return '—';
+  if (ctx.rate === null || ctx.rate === undefined) return 'n/a';
   return formatMoney(ctx.rate, ctx.currency, locale);
 }
 
@@ -82,10 +89,16 @@ const BUILDERS: Record<ReasonCode, Builder> = {
     pt: `Gratis pela franquia: ${ctx.allowanceTotal ?? 1000} mensagens de service por mes por numero. Restam ${ctx.allowanceRemaining ?? 0} neste mes.`,
     en: `Free via the allowance: ${ctx.allowanceTotal ?? 1000} service messages per month per phone number. ${ctx.allowanceRemaining ?? 0} left this month.`,
   }),
-  BILLABLE_SERVICE: (ctx) => ({
-    pt: `Cobrado: mensagem de service cobrada ao rate de utility/authentication do mercado, ${money(ctx, 'pt-BR')}. A franquia mensal ja foi consumida.`,
-    en: `Billed: service message charged at the market utility/authentication rate, ${money(ctx, 'en-US')}. The monthly allowance is already used up.`,
-  }),
+  BILLABLE_SERVICE: (ctx) =>
+    ctx.allowanceEvaluated
+      ? {
+          pt: `Cobrado: mensagem de service ao rate de utility/authentication do mercado, ${money(ctx, 'pt-BR')}. A franquia de ${ctx.allowanceTotal ?? 1000} mensagens/mes deste numero ja foi consumida.`,
+          en: `Billed: service message at the market utility/authentication rate, ${money(ctx, 'en-US')}. This number's allowance of ${ctx.allowanceTotal ?? 1000} messages/month is already used up.`,
+        }
+      : {
+          pt: `Cobrado: mensagem de service ao rate de utility/authentication do mercado, ${money(ctx, 'pt-BR')}. Este e o rate de lista: a franquia de ${ctx.allowanceTotal ?? 1000} mensagens/mes por numero e aplicada na projecao mensal, nao no custo por conversa.`,
+          en: `Billed: service message at the market utility/authentication rate, ${money(ctx, 'en-US')}. This is the list rate: the allowance of ${ctx.allowanceTotal ?? 1000} messages/month per number is applied in the monthly projection, not in the per-conversation cost.`,
+        },
   INVALID_NON_TEMPLATE_OUTSIDE_CSW: () => ({
     pt: 'Cenario invalido: fora da janela de 24h so e possivel enviar template. A Meta rejeitaria este envio, entao nada foi cobrado.',
     en: 'Invalid scenario: outside the 24h window only templates can be sent. Meta would reject this send, so nothing was charged.',

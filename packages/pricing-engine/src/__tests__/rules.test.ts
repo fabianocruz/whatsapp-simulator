@@ -100,6 +100,29 @@ describe('R6 — service', () => {
     expect(priced.totalMicros).toBe(0);
   });
 
+  it('never claims the allowance ran out when the allowance was never consulted', () => {
+    // The October toggle is the teaching moment of the product; telling a first-time user
+    // that their 1,000-message allowance is "already used up" on their first simulated
+    // conversation is the opposite of teaching.
+    const listRate = priceConversation([inbound(0), service(1)], { asOf: OCTOBER }).decisions[1]!;
+    expect(listRate.reasonCode).toBe('BILLABLE_SERVICE');
+    expect(listRate.explanation.pt).toContain('rate de lista');
+    expect(listRate.explanation.pt).toContain('projecao mensal');
+    expect(listRate.explanation.pt).not.toContain('consumida');
+    expect(listRate.explanation.en).toContain('list rate');
+    expect(listRate.explanation.en).not.toContain('used up');
+
+    const exhausted = priceConversation([inbound(0), service(1)], {
+      asOf: OCTOBER,
+      monthlyContext: { serviceMessagesUsedThisMonth: 1_000 },
+    }).decisions[1]!;
+    expect(exhausted.reasonCode).toBe('BILLABLE_SERVICE');
+    expect(exhausted.explanation.pt).toContain('consumida');
+    expect(exhausted.explanation.en).toContain('used up');
+    // Same rule, same charge — only the explanation differs.
+    expect(exhausted.amountMicros).toBe(listRate.amountMicros);
+  });
+
   it('consumes the monthly allowance only when a monthly context is supplied', () => {
     const timeline = [inbound(0), service(1)];
 

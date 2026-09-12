@@ -84,7 +84,7 @@ Todo preco volta com um trace: ruleset, regra, janela, rate, tier, reason code e
 ## As regras, em uma tela
 
 - Mensagem do usuario nunca cobra e abre/renova a janela de atendimento (CSW) de 24h.
-- Cobranca acontece na entrega. `failed` e `sent` nao cobram.
+- Cobranca acontece na entrega: `delivered` e `read` cobram, `sent` e `failed` nao.
 - Template marketing cobra sempre. Authentication cobra sempre. Utility cobra fora da CSW
   (e, a partir de 01/10/2026, tambem dentro dela).
 - Non-template so existe dentro da CSW. Gratis ate 30/09/2026; depois disso cobrado ao rate
@@ -100,7 +100,17 @@ Os rates e os percentuais de desconto vem da spec citando o rate card oficial em
 ainda **nao** foram conferidos contra a fonte primaria da Meta. Os **limites de volume por
 tier sao placeholder**, sem fonte. Ambos estao marcados no JSON (`ratesVerified`,
 `tiersVerified`), aparecem como aviso no CLI e na interface, e `assertReleaseReady()` falha
-enquanto existirem — CI roda essa checagem. Ver [CONTRIBUTING.md](./CONTRIBUTING.md).
+enquanto existirem, e o CI roda essa checagem. Ver [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## Desvios da spec de engenharia v2
+
+Tres pontos em que o codigo nao segue a spec ao pe da letra, todos deliberados:
+
+| Spec | Codigo | Por que |
+|---|---|---|
+| "cobranca so em `delivered` (sent/`read` sem delivered: nao cobra)" | `delivered` e `read` cobram | `SimMessage` carrega um status terminal unico, nao um historico. Mensagem lida foi necessariamente entregue, entao tratar `read` como nao cobrado deixaria toda mensagem lida gratis, que nao e como a Meta cobra. Modelar historico de status (`deliveredAt`/`readAt`) e o caminho certo quando o emulador passar a fazer replay de webhook real. |
+| `PriceDecision.chargeBRL: number` | `amount` + `currency` + `amountMicros` | A propria spec suporta USD (seletor de moeda na barra superior, `RateCard.currency: "BRL" \| "USD"`), entao um campo com a moeda no nome se contradiz. `amountMicros` existe porque a soma acontece em inteiros. |
+| (sem equivalente) | Tiers e franquia de 1.000 service messages ficam fora do custo por conversa por padrao | Nao e desvio, e a leitura que torna a spec consistente: o `R$ 0,4267` do acceptance criteria #1 so fecha se a franquia nao se aplicar na conversa, e a secao 6.4 diz exatamente isso. Quem quiser a conversa precificada como a N-esima do mes passa `monthlyContext` explicitamente. |
 
 ## Nao-objetivos
 

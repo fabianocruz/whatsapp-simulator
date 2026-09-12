@@ -84,9 +84,9 @@ export function TraceDialog({ decision, locale, dict, onClose }: Props) {
             {decision.category} · {decision.market}
           </Row>
           <Row label={dict.rate}>
-            {decision.unitRate === null ? '—' : money(decision.unitRate, decision.currency, locale)}
+            {decision.unitRate === null ? 'n/a' : money(decision.unitRate, decision.currency, locale)}
           </Row>
-          <Row label={dict.tier}>{decision.tierApplied === null ? '—' : `#${decision.tierApplied}`}</Row>
+          <Row label={dict.tier}>{decision.tierApplied === null ? 'n/a' : `#${decision.tierApplied}`}</Row>
           <Row label={dict.windowLabel}>
             {window.cswOpen ? `CSW → ${clockTime(window.cswOpenUntil ?? '', locale)}` : dict.cswClosed}
             {window.fepActive ? ` · FEP → ${clockTime(window.fepActiveUntil ?? '', locale)}` : ''}

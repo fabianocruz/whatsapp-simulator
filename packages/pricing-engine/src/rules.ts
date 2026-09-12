@@ -62,6 +62,8 @@ interface Outcome {
   reasonCode: ReasonCode;
   charge: Charge | null;
   allowanceRemaining?: number;
+  /** Set when the monthly service allowance was actually consulted for this message. */
+  allowanceEvaluated?: boolean;
 }
 
 /**
@@ -112,13 +114,16 @@ function decide(message: SimMessage, window: WindowState, ctx: RuleContext): Out
         allowanceRemaining: ctx.ruleSet.serviceFreeAllowancePerMonth - ctx.cursors.serviceUsed,
       };
     }
+    // Reaching here with a cursor means the allowance really did run out; reaching here
+    // without one means it was never in scope. The explanation has to say which.
+    const allowanceEvaluated = ctx.cursors.serviceUsed !== null;
     if (ctx.cursors.serviceUsed !== null) ctx.cursors.serviceUsed += 1;
     // Service is billed at the market's utility/authentication rate. Whether volume tiers
     // apply to it is not confirmed by Meta, so the ruleset carries the assumption.
     const charge = ctx.ruleSet.serviceUsesVolumeTiers
       ? chargeTiered(ctx, 'utility')
       : { rate: ctx.rateCard.rates.utility, tierApplied: null, discountPct: null };
-    return { ruleId: 'R6_SERVICE', reasonCode: 'BILLABLE_SERVICE', charge };
+    return { ruleId: 'R6_SERVICE', reasonCode: 'BILLABLE_SERVICE', charge, allowanceEvaluated };
   }
 
   switch (message.category) {
@@ -187,6 +192,7 @@ export function priceMessage(
       discountPct: outcome.charge?.discountPct ?? null,
       allowanceRemaining: outcome.allowanceRemaining ?? null,
       allowanceTotal: ctx.ruleSet.serviceFreeAllowancePerMonth || null,
+      allowanceEvaluated: outcome.allowanceEvaluated ?? false,
     }),
     sourceUrl: ctx.ruleSet.sourceUrl,
     effectiveAt: ctx.ruleSet.effectiveFrom,

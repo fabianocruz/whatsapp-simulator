@@ -7,7 +7,7 @@ o que cria confianca e o historico de regras versionado, testado e explicavel.
 
 1. Crie `packages/pricing-data/data/rate-cards/<market>-<CURRENCY>/<YYYY-MM-DD>.json`
    usando `br-BRL/2026-07-01.json` como modelo. O nome do arquivo e a data de vigencia.
-2. Preencha `sourceUrl` com a **fonte primaria** — a pagina de pricing da Meta ou o rate
+2. Preencha `sourceUrl` com a **fonte primaria**: a pagina de pricing da Meta ou o rate
    card oficial. README de terceiro nao serve como fonte: use para achar o numero, nao para
    cita-lo.
 3. Marque `ratesVerified: true` **apenas** se voce conferiu cada rate na fonte primaria.
@@ -18,6 +18,11 @@ o que cria confianca e o historico de regras versionado, testado e explicavel.
 
 Se um card antigo sai de vigencia, preencha o `effectiveTo` dele em vez de apagar o arquivo:
 o "rules as of" do simulador precisa conseguir voltar no tempo.
+
+O repositorio inteiro e MIT, rate cards inclusive. Na pratica os rates sao fatos publicados
+pela Meta e fato nao e protegido por direito autoral na maioria das jurisdicoes, entao use
+os JSON a vontade, inclusive fora deste projeto. O trabalho que pedimos que voce preserve
+e a atribuicao da *fonte* (`sourceUrl`), nao a nossa.
 
 ### Por que os campos `*Verified` existem
 
@@ -31,7 +36,7 @@ pegar.
 Regra nova vira um **ruleset novo** com vigencia propria em
 `packages/pricing-data/data/rulesets/`, nunca um `if` de data dentro do motor. Se a regra
 nao couber nos campos existentes do `RuleSet`, adicione o campo ao tipo e a todos os
-rulesets — deixar um ruleset sem o campo torna o comportamento dependente da ordem dos
+rulesets. Deixar um ruleset sem o campo torna o comportamento dependente da ordem dos
 arquivos.
 
 Toda decisao de preco precisa de um `reasonCode` com texto em PT e EN
