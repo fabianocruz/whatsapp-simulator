@@ -101,6 +101,7 @@
     }
   ],
   "sourceUrl": "https://whatsappbusiness.com/products/platform-pricing/",
+  "verifiedAt": "2026-09-12",
   "notes": {
     "pt": "Rate card oficial BR/BRL, extraido de https://whatsappbusiness.com/products/platform-pricing/ por scripts/fetch-rate-card.mjs. Impostos brasileiros podem incidir sobre estes valores.",
     "en": "Official BR/BRL rate card, pulled from https://whatsappbusiness.com/products/platform-pricing/ by scripts/fetch-rate-card.mjs. Brazilian taxes may apply on top of these amounts."

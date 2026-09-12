@@ -55,6 +55,12 @@ export interface RateCard {
   ratesVerified: boolean;
   volumeTiers: VolumeTierTable[];
   sourceUrl: string;
+  /**
+   * ISO date this file was last checked against the primary source. Meta only changes
+   * prices on 01/01, 01/04, 01/07 and 01/10, so a card that has not been re-checked in
+   * over a quarter is worth a second look — and the README badge quotes this.
+   */
+  verifiedAt: string;
   notes: LocalizedText;
 }
 
@@ -80,6 +86,8 @@ export interface RuleSet {
   notes: LocalizedText;
   sourceUrl: string;
   verified: boolean;
+  /** ISO date this ruleset was last checked against the primary source. */
+  verifiedAt: string;
   /** Free-form map of fields whose value is an assumption, keyed by field name. */
   unverified?: Record<string, string>;
 }

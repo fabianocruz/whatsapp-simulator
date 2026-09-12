@@ -28,6 +28,7 @@ const CARD: RateCard = {
     },
   ],
   sourceUrl: 'https://example.test/rate-card',
+  verifiedAt: '2026-01-01',
   notes: { pt: 'fixture', en: 'fixture' },
 };
 

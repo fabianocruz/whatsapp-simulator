@@ -11,12 +11,13 @@
   "fepHours": 72,
   "fepResponseWindowHours": 24,
   "notes": {
-    "pt": "A partir de 01/10/2026 service messages sao cobradas ao rate de utility/authentication do mercado, com franquia de 1.000 mensagens gratis por mes por numero de telefone (sem acumulo). Utility dentro da CSW volta a ser cobrado. FEP de 72h continua gratis.",
-    "en": "From 2026-10-01 service messages are billed at the market utility/authentication rate, with an allowance of 1,000 free messages per month per phone number (no rollover). Utility inside the CSW becomes billable again. The 72h FEP stays free."
+    "pt": "A partir de 01/10/2026 a Meta cobra service messages por mensagem, ao mesmo rate de utility/authentication do mercado, com franquia de 1.000 mensagens gratis por mes por numero de telefone: a cobranca comeca na 1.001a entregue no mes. A franquia nao acumula e reseta todo mes. Utility dentro da janela de 24h volta a ser cobrado, fim da gratuidade que valeu de 01/07/2025 a 30/09/2026. A janela em si nao muda: service so pode ser enviada dentro da CSW aberta, e template continua sendo o unico tipo que sai fora dela. FEP de 72h continua gratis.",
+    "en": "From 2026-10-01 Meta charges service messages per message, at the same rate as the market's utility/authentication, with an allowance of 1,000 free messages per month per phone number: charging starts at the 1,001st delivered in the month. The allowance does not roll over and resets monthly. Utility inside the 24h window becomes billable again, ending the exemption that ran from 2025-07-01 to 2026-09-30. The window itself is unchanged: service can only be sent inside an open CSW, and templates remain the only type that can go out beyond it. The 72h FEP stays free."
   },
-  "sourceUrl": "https://developers.facebook.com/docs/whatsapp/pricing/updates-to-pricing/",
+  "sourceUrl": "https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing",
   "verified": true,
   "unverified": {
     "serviceUsesVolumeTiers": "A Meta anuncia o rate de service como 'o mesmo de utility/authentication do mercado' mas nao confirma se os tiers de volume se aplicam. Assumimos rate de lista (sem tier) ate confirmacao."
-  }
+  },
+  "verifiedAt": "2026-09-12"
 }

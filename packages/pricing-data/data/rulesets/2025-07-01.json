@@ -11,9 +11,10 @@
   "fepHours": 72,
   "fepResponseWindowHours": 24,
   "notes": {
-    "pt": "Modelo per-message desde 01/07/2025. Non-template gratis desde 01/11/2024; utility dentro da CSW gratis desde 01/07/2025.",
-    "en": "Per-message model since 2025-07-01. Non-template free since 2024-11-01; utility inside the CSW free since 2025-07-01."
+    "pt": "Modelo per-message desde 01/07/2025. Non-template gratis desde 01/11/2024; utility dentro da CSW gratis desde 01/07/2025, gratuidade que a Meta encerra em 30/09/2026.",
+    "en": "Per-message model since 2025-07-01. Non-template free since 2024-11-01; utility inside the CSW free since 2025-07-01, an exemption Meta ends on 2026-09-30."
   },
-  "sourceUrl": "https://developers.facebook.com/docs/whatsapp/pricing/updates-to-pricing/",
-  "verified": true
+  "sourceUrl": "https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing",
+  "verified": true,
+  "verifiedAt": "2026-09-12"
 }

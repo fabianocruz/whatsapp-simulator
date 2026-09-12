@@ -29,7 +29,8 @@ jobs:
 
   rate-card-freshness:
     # Meta only changes prices on 01/01, 01/04, 01/07 and 01/10, with at least a month's
-    # notice. This runs monthly so an expiring ruleset is noticed before it expires.
+    # notice. This job diffs the versioned rate card against Meta's live pricing endpoint,
+    # so a change is caught when it ships rather than when a user reports a wrong number.
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -45,4 +46,7 @@ jobs:
           cache: pnpm
           cache-dependency-path: whatsapp-simulator/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      # Not a date heuristic: this asks Meta what it publishes today and fails if the
+      # versioned rate card no longer matches it.
+      - run: node scripts/fetch-rate-card.mjs --market BR --currency BRL --check
       - run: pnpm test -- packages/pricing-data

@@ -110,6 +110,7 @@ async function build(market, currency, effectiveFrom) {
     ratesVerified: true,
     volumeTiers,
     sourceUrl: PRICING_PAGE,
+    verifiedAt: new Date().toISOString().slice(0, 10),
     notes: {
       pt: `Rate card oficial ${market}/${currency}, extraido de ${PRICING_PAGE} por scripts/fetch-rate-card.mjs. Impostos brasileiros podem incidir sobre estes valores.`,
       en: `Official ${market}/${currency} rate card, pulled from ${PRICING_PAGE} by scripts/fetch-rate-card.mjs. Brazilian taxes may apply on top of these amounts.`,
@@ -138,9 +139,20 @@ const target = join(
 const card = await build(market, currency, values['effective-from']);
 const serialized = `${JSON.stringify(card, null, 2)}\n`;
 
+/** Everything except when we last looked, which is metadata about us, not about the data. */
+function withoutStamp(json) {
+  if (!json) return '';
+  try {
+    const { verifiedAt, ...rest } = JSON.parse(json);
+    return JSON.stringify(rest);
+  } catch {
+    return json;
+  }
+}
+
 if (values.check) {
   const current = existsSync(target) ? readFileSync(target, 'utf8') : '';
-  if (current === serialized) {
+  if (withoutStamp(current) === withoutStamp(serialized)) {
     process.stdout.write(`up to date: ${target.slice(REPO_ROOT.length + 1)}\n`);
   } else {
     process.stdout.write(`DRIFT: ${target.slice(REPO_ROOT.length + 1)} differs from what Meta publishes today.\n`);

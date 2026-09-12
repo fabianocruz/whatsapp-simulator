@@ -107,7 +107,9 @@ node scripts/fetch-rate-card.mjs --market BR --currency BRL --check
 
 Todo numero sem fonte fica marcado no JSON (`ratesVerified`, `tiersVerified`), vira aviso
 no CLI e na interface, e `assertReleaseReady()` falha enquanto existir. Hoje o dataset
-passa nessa checagem. Ver [CONTRIBUTING.md](./CONTRIBUTING.md).
+passa nessa checagem. Cada arquivo carrega um `verifiedAt` com a data da ultima conferencia
+contra a fonte, e o CI roda o `--check` para pegar mudanca no dia em que ela sai. Ver
+[CONTRIBUTING.md](./CONTRIBUTING.md).
 
 Uma ressalva que o dado nao cobre: impostos brasileiros podem incidir sobre estes valores,
 e o rate card da Meta nao os inclui.

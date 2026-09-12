@@ -146,6 +146,18 @@ describe('verification flags', () => {
     for (const card of RATE_CARDS) expect(card.sourceUrl).toMatch(/^https:\/\//);
     for (const rules of RULESETS) expect(rules.sourceUrl).toMatch(/^https:\/\//);
   });
+
+  it('records when each file was last checked against that source', () => {
+    // The README badge quotes this, and a dataset that cannot say when it was last
+    // checked is a dataset nobody should trust with a pricing decision.
+    for (const card of RATE_CARDS) {
+      expect(card.verifiedAt, `${card.market}/${card.currency}`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(card.verifiedAt >= card.effectiveFrom, `${card.market}: checked before it took effect`).toBe(true);
+    }
+    for (const rules of RULESETS) {
+      expect(rules.verifiedAt, rules.id).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
+  });
 });
 
 describe('the shipped tier thresholds', () => {
