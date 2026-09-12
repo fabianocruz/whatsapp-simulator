@@ -1,6 +1,6 @@
 import { distanceToNextTier, toMicros } from '@dyvit/whatsapp-pricing';
-import { both, businessRuns, hoursBetween, looksTransactional, tip } from '../helpers.js';
-import type { TipRule } from '../types.js';
+import { both, businessRuns, hoursBetween, looksTransactional, tip } from '../helpers';
+import type { TipRule } from '../types';
 
 /**
  * T1 — consecutive non-template replies inside one window.

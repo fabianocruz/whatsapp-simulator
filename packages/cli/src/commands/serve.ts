@@ -9,8 +9,8 @@ import {
   toInboundWebhook,
   toStatusWebhook,
   type GraphSendRequest,
-} from '../adapters/graph-api.js';
-import { WebhookDispatcher } from '../adapters/webhook-dispatcher.js';
+} from '../adapters/graph-api';
+import { WebhookDispatcher } from '../adapters/webhook-dispatcher';
 
 export interface ServeOptions {
   port: number;

@@ -1,6 +1,6 @@
 import { formatMoney, fromMicros, toMicros } from '@dyvit/whatsapp-pricing';
 import type { Currency, SimMessage } from '@dyvit/whatsapp-pricing';
-import type { Tip, TipSeverity } from './types.js';
+import type { Tip, TipSeverity } from './types';
 
 export { formatMoney, fromMicros, toMicros };
 

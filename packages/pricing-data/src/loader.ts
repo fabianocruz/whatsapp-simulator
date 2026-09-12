@@ -1,4 +1,4 @@
-import type { Currency, LocalizedText, RateCard, RuleSet } from './types.js';
+import type { Currency, LocalizedText, RateCard, RuleSet } from './types';
 
 import rateCardBr20260701 from '../data/rate-cards/br-BRL/2026-07-01.json';
 import ruleset20250701 from '../data/rulesets/2025-07-01.json';

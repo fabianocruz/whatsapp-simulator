@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { formatMoney, fromMicros, sumMicros, toMicros } from '../money.js';
+import { formatMoney, fromMicros, sumMicros, toMicros } from '../money';
 
 describe('micro-unit arithmetic', () => {
   it('keeps four-decimal rates exact through a sum that floats get wrong', () => {
-    // 0.3217 + 0.035 is 0.35670000000000002 in IEEE doubles.
-    expect(0.3217 + 0.035).not.toBe(0.3567);
-    expect(fromMicros(sumMicros([toMicros(0.3217), toMicros(0.035)]))).toBe(0.3567);
+    // A marketing template plus a utility template at the -10% tier: both rates come
+    // straight off the Brazilian card, and in IEEE doubles their sum lands on
+    // 0.35319999999999996.
+    expect(0.3217 + 0.0315).not.toBe(0.3532);
+    expect(fromMicros(sumMicros([toMicros(0.3217), toMicros(0.0315)]))).toBe(0.3532);
+
+    // Three service messages at the -5% tier: 0.09990000000000002 in doubles.
+    expect(0.0333 + 0.0333 + 0.0333).not.toBe(0.0999);
+    expect(fromMicros(sumMicros(Array.from({ length: 3 }, () => toMicros(0.0333))))).toBe(0.0999);
   });
 
   it('round-trips every rate in the shipped Brazilian card', () => {

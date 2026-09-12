@@ -1,4 +1,4 @@
-import type { PricedConversation } from './types.js';
+import type { PricedConversation } from './types';
 
 /**
  * The per-message breakdown as CSV.

@@ -1,7 +1,7 @@
 import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createEmulatorServer } from '../commands/serve.js';
+import { createEmulatorServer } from '../commands/serve';
 
 /**
  * The spec's release gate, exercised end to end: a project points its Graph base URL at

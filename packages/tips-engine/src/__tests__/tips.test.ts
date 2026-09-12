@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getScenario } from '@dyvit/whatsapp-scenarios';
 import { priceConversation } from '@dyvit/whatsapp-pricing';
 import type { SimMessage } from '@dyvit/whatsapp-pricing';
-import { analyzeConversation, generateTips, TIP_RULES } from '../index.js';
+import { analyzeConversation, generateTips, TIP_RULES } from '../index';
 
 const TODAY = '2026-09-01';
 const OCTOBER = '2026-10-01';

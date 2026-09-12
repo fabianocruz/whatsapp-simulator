@@ -1,5 +1,5 @@
-import type { SimMessage, ValidationIssue } from './types.js';
-import { parseInstant } from './windows.js';
+import type { SimMessage, ValidationIssue } from './types';
+import { parseInstant } from './windows';
 
 const TEMPLATE_CATEGORIES = new Set(['marketing', 'utility', 'authentication']);
 

@@ -1,5 +1,5 @@
 import type { RateCard, VolumeTier, TieredCategory } from '@dyvit/whatsapp-pricing-data';
-import { toMicros } from './money.js';
+import { toMicros } from './money';
 
 export interface TierLookup {
   tier: VolumeTier;

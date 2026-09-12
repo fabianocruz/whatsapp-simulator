@@ -1,10 +1,10 @@
 import { priceConversation, sortByTime } from '@dyvit/whatsapp-pricing';
 import type { PriceConversationOptions, SimMessage } from '@dyvit/whatsapp-pricing';
-import { TIP_RULES } from './rules/catalogue.js';
-import type { Tip, TipRuleContext, TipsInput } from './types.js';
+import { TIP_RULES } from './rules/catalogue';
+import type { Tip, TipRuleContext, TipsInput } from './types';
 
-export * from './types.js';
-export { TIP_RULES } from './rules/catalogue.js';
+export * from './types';
+export { TIP_RULES } from './rules/catalogue';
 
 /** The ruleset every "after October" tip compares against. */
 export const FUTURE_RULESET_AS_OF = '2026-10-01';

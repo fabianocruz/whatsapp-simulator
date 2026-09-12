@@ -3,7 +3,7 @@ import { compareRulesets, projectMonthly, volumeFromConversation } from '@dyvit/
 import type { Currency, SimMessage } from '@dyvit/whatsapp-pricing';
 import { SCENARIOS, getScenario } from '@dyvit/whatsapp-scenarios';
 import { analyzeConversation } from '@dyvit/whatsapp-tips';
-import { money, renderCsv, renderSummary, renderTable, renderTips, renderWarnings, type Locale } from '../format.js';
+import { money, renderCsv, renderSummary, renderTable, renderTips, renderWarnings, type Locale } from '../format';
 
 export interface PriceOptions {
   scenario?: string;

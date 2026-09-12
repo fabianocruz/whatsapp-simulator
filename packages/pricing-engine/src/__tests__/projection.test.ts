@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getScenario } from '@dyvit/whatsapp-scenarios';
-import { priceConversation } from '../price-conversation.js';
-import { projectMonthly, volumeFromConversation } from '../projection.js';
+import { priceConversation } from '../price-conversation';
+import { projectMonthly, volumeFromConversation } from '../projection';
 
 const TODAY = '2026-09-01';
 const OCTOBER = '2026-10-01';

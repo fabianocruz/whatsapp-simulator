@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getScenario } from '@dyvit/whatsapp-scenarios';
-import { compareRulesets, priceConversation } from '../price-conversation.js';
-import { projectMonthly } from '../projection.js';
+import { compareRulesets, priceConversation } from '../price-conversation';
+import { projectMonthly } from '../projection';
 
 const CURRENT_AS_OF = '2026-09-01';
 const FUTURE_AS_OF = '2026-10-01';

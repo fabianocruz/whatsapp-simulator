@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { selectRuleSet } from '@dyvit/whatsapp-pricing-data';
-import type { SimMessage } from '../types.js';
-import { deriveWindows } from '../windows.js';
+import type { SimMessage } from '../types';
+import { deriveWindows } from '../windows';
 
 const RULES = selectRuleSet('2026-09-01');
 const BASE = Date.UTC(2026, 8, 1, 9, 0, 0);

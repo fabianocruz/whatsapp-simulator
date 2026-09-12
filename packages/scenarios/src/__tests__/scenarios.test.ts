@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { priceConversation, sortByTime } from '@dyvit/whatsapp-pricing';
-import { SCENARIOS, getScenario } from '../index.js';
+import { SCENARIOS, getScenario } from '../index';
 
 describe('bundled scenarios', () => {
   it('exposes a unique slug per scenario', () => {

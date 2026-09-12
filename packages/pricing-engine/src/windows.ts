@@ -1,4 +1,4 @@
-import type { EntryPoint, RuleSet, SimMessage, WindowState } from './types.js';
+import type { EntryPoint, RuleSet, SimMessage, WindowState } from './types';
 
 const HOUR_MS = 60 * 60 * 1000;
 

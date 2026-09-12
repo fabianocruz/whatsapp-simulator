@@ -1,5 +1,5 @@
-import { formatMoney } from './money.js';
-import type { Currency, LocalizedText, ReasonCode } from './types.js';
+import { formatMoney } from './money';
+import type { Currency, LocalizedText, ReasonCode } from './types';
 
 export interface ExplanationContext {
   currency: Currency;

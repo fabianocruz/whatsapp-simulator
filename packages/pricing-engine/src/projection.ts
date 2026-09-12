@@ -1,8 +1,8 @@
 import { collectDataWarnings, selectRateCard, selectRuleSet, toEffectiveDate } from '@dyvit/whatsapp-pricing-data';
 import type { DataWarning, RateCard, RuleSet } from '@dyvit/whatsapp-pricing-data';
-import { fromMicros, toMicros } from './money.js';
-import { priceTieredVolume, type TierSlice } from './tiers.js';
-import type { Category, Currency, PricedConversation } from './types.js';
+import { fromMicros, toMicros } from './money';
+import { priceTieredVolume, type TierSlice } from './tiers';
+import type { Category, Currency, PricedConversation } from './types';
 
 export type VolumeByCategory = Record<Category, number>;
 

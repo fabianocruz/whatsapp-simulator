@@ -1,8 +1,8 @@
 import type { RateCard, RuleSet, TieredCategory } from '@dyvit/whatsapp-pricing-data';
-import { fromMicros, toMicros } from './money.js';
-import { explain } from './reason-codes.js';
-import { findTier } from './tiers.js';
-import type { Currency, PriceDecision, ReasonCode, SimMessage, WindowState } from './types.js';
+import { fromMicros, toMicros } from './money';
+import { explain } from './reason-codes';
+import { findTier } from './tiers';
+import type { Currency, PriceDecision, ReasonCode, SimMessage, WindowState } from './types';
 
 /**
  * Statuses that trigger a charge.

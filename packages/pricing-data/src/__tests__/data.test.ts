@@ -9,7 +9,7 @@ import {
   selectRateCard,
   selectRuleSet,
   toEffectiveDate,
-} from '../index.js';
+} from '../index';
 
 describe('ruleset selection', () => {
   it('picks the per-message ruleset through 2026-09-30', () => {

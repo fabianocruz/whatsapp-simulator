@@ -1,8 +1,8 @@
 import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
-import { listScenarios, runPrice } from './commands/price.js';
-import { runServe } from './commands/serve.js';
-import type { Locale } from './format.js';
+import { listScenarios, runPrice } from './commands/price';
+import { runServe } from './commands/serve';
+import type { Locale } from './format';
 import type { Currency } from '@dyvit/whatsapp-pricing';
 
 const HELP = `dyvit-wa-sim · WhatsApp Business Platform cost simulator

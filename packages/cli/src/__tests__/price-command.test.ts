@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { runPrice } from '../commands/price.js';
-import { renderCsv } from '../format.js';
+import { runPrice } from '../commands/price';
+import { renderCsv } from '../format';
 import { priceConversation } from '@dyvit/whatsapp-pricing';
 import { getScenario } from '@dyvit/whatsapp-scenarios';
 
@@ -12,7 +12,10 @@ async function capture(run: () => Promise<number>): Promise<{ code: number; out:
   });
   try {
     const code = await run();
-    return { code, out };
+    // Intl.NumberFormat separates "R$" from the digits with a non-breaking space, and
+    // which flavour of it ICU picks can change between Node releases. Assertions here are
+    // about the numbers, not about the space, so normalize it away.
+    return { code, out: out.replace(/[\u00a0\u202f]/g, ' ') };
   } finally {
     spy.mockRestore();
   }

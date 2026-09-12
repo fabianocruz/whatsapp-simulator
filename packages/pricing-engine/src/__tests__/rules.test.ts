@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { SimMessage } from '../types.js';
-import { priceConversation } from '../price-conversation.js';
+import type { SimMessage } from '../types';
+import { priceConversation } from '../price-conversation';
 
 const BASE = Date.UTC(2026, 8, 1, 9, 0, 0);
 const at = (hours: number) => new Date(BASE + hours * 3_600_000).toISOString();

@@ -1,13 +1,13 @@
-export * from './types.js';
-export * from './money.js';
-export * from './reason-codes.js';
-export * from './windows.js';
-export * from './tiers.js';
-export * from './rules.js';
-export * from './validate.js';
-export * from './price-conversation.js';
-export * from './projection.js';
-export * from './export.js';
+export * from './types';
+export * from './money';
+export * from './reason-codes';
+export * from './windows';
+export * from './tiers';
+export * from './rules';
+export * from './validate';
+export * from './price-conversation';
+export * from './projection';
+export * from './export';
 export {
   selectRateCard,
   selectRuleSet,

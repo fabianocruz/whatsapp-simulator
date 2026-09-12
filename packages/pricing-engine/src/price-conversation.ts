@@ -5,8 +5,8 @@ import {
   toEffectiveDate,
 } from '@dyvit/whatsapp-pricing-data';
 import type { TieredCategory } from '@dyvit/whatsapp-pricing-data';
-import { fromMicros } from './money.js';
-import { priceMessage, type RuleContext, type RuleCursors } from './rules.js';
+import { fromMicros } from './money';
+import { priceMessage, type RuleContext, type RuleCursors } from './rules';
 import type {
   Category,
   CategoryBreakdown,
@@ -14,9 +14,9 @@ import type {
   PriceDecision,
   PricedConversation,
   SimMessage,
-} from './types.js';
-import { validateTimeline } from './validate.js';
-import { deriveWindows } from './windows.js';
+} from './types';
+import { validateTimeline } from './validate';
+import { deriveWindows } from './windows';
 
 const ALL_CATEGORIES: readonly Category[] = ['marketing', 'utility', 'authentication', 'service'];
 

@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
-import { WebhookDispatcher } from '../adapters/webhook-dispatcher.js';
+import { WebhookDispatcher } from '../adapters/webhook-dispatcher';
 
 describe('WebhookDispatcher', () => {
   it('records what it would have sent when no URL is configured', async () => {

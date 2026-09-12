@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RateCard } from '@dyvit/whatsapp-pricing-data';
-import { distanceToNextTier, findTier, priceTieredVolume } from '../tiers.js';
+import { distanceToNextTier, findTier, priceTieredVolume } from '../tiers';
 
 /**
  * A synthetic card with round numbers. The shipped Brazilian thresholds are placeholders

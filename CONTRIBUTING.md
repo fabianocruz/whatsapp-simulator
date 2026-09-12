@@ -52,6 +52,15 @@ que recebe a conversa precificada e devolve `Tip | null`. Requisitos:
 - Nada de conselho que a gente nao consiga quantificar: se nao da para estimar a economia,
   a dica e `severity: 'info'` com `savingMicros: 0`.
 
+## Convencoes de codigo
+
+**Imports relativos nao levam extensao.** Escreva `from './types'`, nunca `from './types.js'`.
+O monorepo distribui codigo TypeScript em vez de build, e o app web consome esse codigo
+direto pelo webpack do Next via `transpilePackages`. O webpack nao remapeia `./types.js`
+para `types.ts` como o vitest, o tsx e a resolucao `Bundler` do tsc fazem, entao um sufixo
+`.js` passa no teste e no typecheck e quebra so no `pnpm build:web`. Ha um teste que pega
+isso (`module-specifiers.test.ts`).
+
 ## Rodando
 
 ```bash
