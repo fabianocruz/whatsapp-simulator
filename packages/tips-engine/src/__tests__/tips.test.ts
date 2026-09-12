@@ -139,12 +139,41 @@ describe('T5 — collect with Flows', () => {
 describe('T6 — near the next tier', () => {
   it('fires when projected volume sits just under a threshold', () => {
     // 1 billable utility per conversation x 240,000 conversations = 240,000 utility
-    // messages, 10,000 short of Meta's real 250,000 threshold (within 10% of it).
+    // messages, just short of Meta's real 250,000 threshold (within 10% of it).
     const scenario = getScenario('worked-example-spec');
     const result = analyzeConversation(scenario.messages, { asOf: TODAY, conversationsPerMonth: 240_000 });
     const t6 = result.tips.find((t) => t.ruleId === 'T6')!;
-    expect(t6.titlePt).toContain('10.000 mensagens');
-    expect(t6.estimatedSavingMicros).toBe((35_000 - 33_300) * 240_000);
+    expect(t6.titlePt).toContain('10.001 mensagens');
+  });
+
+  /**
+   * Volume tiers are graduated. An earlier version of this rule multiplied the rate delta by
+   * the entire monthly volume and told a business projecting 240,000 utility messages that
+   * crossing the threshold would save R$ 408 a month. The real effect on the next 10,000
+   * messages is R$ 17: a 24x overstatement, on a number someone budgets against.
+   */
+  it('never claims that crossing a threshold discounts the volume already sent', () => {
+    const scenario = getScenario('worked-example-spec');
+    const result = analyzeConversation(scenario.messages, { asOf: TODAY, conversationsPerMonth: 240_000 });
+    const t6 = result.tips.find((t) => t.ruleId === 'T6')!;
+
+    expect(t6.estimatedSavingMicros).toBe(0);
+    expect(t6.severity).toBe('info');
+    // It has to say out loud that the discount is partial.
+    expect(t6.textPt).toContain('graduado');
+    expect(t6.textPt).toContain('nao barateia o volume inteiro');
+    expect(t6.textEn).toContain('graduated');
+    expect(t6.textEn).toContain('does not make the whole volume cheaper');
+  });
+
+  it('quotes a per-message difference that matches the rate card', () => {
+    const scenario = getScenario('worked-example-spec');
+    const result = analyzeConversation(scenario.messages, { asOf: TODAY, conversationsPerMonth: 240_000 });
+    const t6 = result.tips.find((t) => t.ruleId === 'T6')!;
+    // 0.0350 - 0.0333 = 0.0017 per message above the line, and nothing below it.
+    expect(t6.textPt).toContain('0,0017');
+    expect(t6.textPt).toContain('0,0333');
+    expect(t6.textPt).toContain('250.000');
   });
 
   it('stays quiet when volume is nowhere near a threshold', () => {

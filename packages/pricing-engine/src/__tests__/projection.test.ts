@@ -1,10 +1,23 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { getScenario } from '@dyvit/whatsapp-scenarios';
+import * as data from '@dyvit/whatsapp-pricing-data';
+import type { RuleSet } from '@dyvit/whatsapp-pricing-data';
 import { priceConversation } from '../price-conversation';
-import { projectMonthly, volumeFromConversation } from '../projection';
+import { priceTieredVolume } from '../tiers';
+import { projectMonthly, volumeFromConversation, type VolumeByCategory } from '../projection';
 
 const TODAY = '2026-09-01';
 const OCTOBER = '2026-10-01';
+
+/** Runs projectMonthly against a ruleset variant, to exercise a flag the data ships off. */
+function projectMonthlyWith(ruleSet: RuleSet, volumes: Partial<VolumeByCategory>) {
+  const spy = vi.spyOn(data, 'selectRuleSet').mockReturnValue(ruleSet);
+  try {
+    return projectMonthly(volumes, { asOf: OCTOBER, market: 'BR', currency: 'BRL' });
+  } finally {
+    spy.mockRestore();
+  }
+}
 
 describe('projectMonthly', () => {
   it('prices marketing flat — there are no volume tiers for it', () => {
@@ -36,6 +49,42 @@ describe('projectMonthly', () => {
     const service = projection.categories.find((c) => c.category === 'service')!;
     expect(projection.phoneNumbers).toBe(1);
     expect(service.freeByAllowance).toBe(1_000);
+  });
+});
+
+describe('service volume tiers, if Meta ever confirms they apply', () => {
+  /**
+   * The ruleset ships with serviceUsesVolumeTiers=false because Meta does not confirm it.
+   * The branch still has to be right: service would share the market's utility pool, so it
+   * accrues on top of the utility volume already billed that month. Pricing it from zero
+   * would hand a business a discount it has not earned.
+   */
+  const withTiers: RuleSet = {
+    ...data.selectRuleSet(OCTOBER),
+    serviceUsesVolumeTiers: true,
+  };
+
+  it('accrues service on top of the month’s utility volume', () => {
+    const utilityVolume = 249_000;
+    const serviceCharged = 2_000; // 3,000 service messages, 1,000 free by allowance
+
+    const projection = projectMonthlyWith(withTiers, { utility: utilityVolume, service: 3_000 });
+    const service = projection.categories.find((c) => c.category === 'service')!;
+
+    expect(service.freeByAllowance).toBe(1_000);
+    expect(service.chargedMessages).toBe(serviceCharged);
+    // Positions 249,000..250,999: 1,000 still at list rate, then 1,000 at -5%.
+    expect(service.slices.map((s) => [s.messages, s.rate])).toEqual([
+      [1_000, 0.035],
+      [1_000, 0.0333],
+    ]);
+  });
+
+  it('would under-price the month if it started the pool from zero', () => {
+    const card = data.selectRateCard('BR', 'BRL', OCTOBER);
+    const fromZero = priceTieredVolume(card, 'utility', 2_000, 0);
+    const stacked = priceTieredVolume(card, 'utility', 2_000, 249_000);
+    expect(stacked.amountMicros).toBeLessThan(fromZero.amountMicros);
   });
 });
 

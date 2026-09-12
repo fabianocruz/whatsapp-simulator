@@ -24,8 +24,8 @@ export const consolidateReplies: TipRule = (ctx) => {
     currency: ctx.currency,
     titlePt: 'Consolide suas respostas',
     titleEn: 'Consolidate your replies',
-    textPt: `Voce tem ${extraMessages + runs.length} respostas seguidas em ${runs.length} ${runs.length === 1 ? 'trecho' : 'trechos'} da conversa. Cada mensagem de service vira cobrada em 01/10/2026: juntando cada sequencia em uma mensagem so voce deixa de pagar ${extraMessages} ${extraMessages === 1 ? 'cobranca' : 'cobrancas'}, ${money.pt} por conversa.`,
-    textEn: `You send ${extraMessages + runs.length} back-to-back replies across ${runs.length} ${runs.length === 1 ? 'stretch' : 'stretches'} of the conversation. Every service message becomes billable on 2026-10-01: merging each stretch into one message drops ${extraMessages} ${extraMessages === 1 ? 'charge' : 'charges'}, ${money.en} per conversation.`,
+    textPt: `Voce tem ${extraMessages + runs.length} respostas seguidas em ${runs.length} ${runs.length === 1 ? 'trecho' : 'trechos'} da conversa. Cada mensagem de service vira cobrada em 01/10/2026: juntando cada sequencia em uma mensagem so voce deixa de pagar ${extraMessages} ${extraMessages === 1 ? 'cobranca' : 'cobrancas'}, ${money.pt} por conversa. Vale a partir da 1.001a mensagem de service do mes: abaixo disso a franquia ja cobre.`,
+    textEn: `You send ${extraMessages + runs.length} back-to-back replies across ${runs.length} ${runs.length === 1 ? 'stretch' : 'stretches'} of the conversation. Every service message becomes billable on 2026-10-01: merging each stretch into one message drops ${extraMessages} ${extraMessages === 1 ? 'charge' : 'charges'}, ${money.en} per conversation. This bites from the 1,001st service message of the month onward; below that the allowance already covers you.`,
     savingMicros,
   });
 };
@@ -130,13 +130,21 @@ export const collectWithFlows: TipRule = (ctx) => {
     currency: ctx.currency,
     titlePt: 'Colete os dados em uma interacao',
     titleEn: 'Collect the data in one interaction',
-    textPt: `O bot faz ${questions.length} perguntas soltas para coletar dados. Um WhatsApp Flow ou uma lista de botoes coleta tudo em 1 interacao em vez de ${questions.length} mensagens cobradas a partir de 01/10/2026: ${money.pt} por conversa.`,
-    textEn: `The bot asks ${questions.length} separate questions to collect data. A WhatsApp Flow or a button list collects it in one interaction instead of ${questions.length} messages that become billable on 2026-10-01: ${money.en} per conversation.`,
+    textPt: `O bot faz ${questions.length} perguntas soltas para coletar dados. Um WhatsApp Flow ou uma lista de botoes coleta tudo em 1 interacao em vez de ${questions.length} mensagens cobradas a partir de 01/10/2026: ${money.pt} por conversa, contando da 1.001a mensagem de service do mes em diante.`,
+    textEn: `The bot asks ${questions.length} separate questions to collect data. A WhatsApp Flow or a button list collects it in one interaction instead of ${questions.length} messages that become billable on 2026-10-01: ${money.en} per conversation, counting from the 1,001st service message of the month onward.`,
     savingMicros,
   });
 };
 
-/** T6 — projected monthly volume sitting just below the next discount tier. */
+/**
+ * T6 — projected monthly volume sitting just below the next discount tier.
+ *
+ * This rule states no saving, and that is deliberate. Volume tiers are graduated: crossing
+ * a threshold discounts the messages *above* it, never the volume already sent. An earlier
+ * version multiplied the rate delta by the whole monthly volume and claimed R$ 408 where
+ * the real effect on the next 10,000 messages is R$ 17 — a 24x overstatement. The spec's
+ * own wording ("your average falls from R$ 0.0350 to R$ 0.0315") carries the same mistake.
+ */
 export const nearNextTier: TipRule = (ctx) => {
   const perMonth = ctx.conversationsPerMonth ?? 0;
   if (perMonth <= 0) return null;
@@ -151,19 +159,20 @@ export const nearNextTier: TipRule = (ctx) => {
     // "Close" means within 10% of the threshold, the way the spec frames it.
     if (next.messagesAway > next.nextTier.from * 0.1) continue;
 
-    const savingMicros = (toMicros(next.currentRate) - toMicros(next.nextTier.rate)) * volume;
-    const money = both(savingMicros, ctx.currency);
+    const current = both(toMicros(next.currentRate), ctx.currency);
+    const discounted = both(toMicros(next.nextTier.rate), ctx.currency);
+    const perMessage = both(toMicros(next.currentRate) - toMicros(next.nextTier.rate), ctx.currency);
 
     return tip({
       ruleId: 'T6',
       severity: 'info',
       triggeredBy: [],
       currency: ctx.currency,
-      titlePt: `Faltam ${next.messagesAway.toLocaleString('pt-BR')} mensagens para o tier -${next.nextTier.discountPct}%`,
-      titleEn: `${next.messagesAway.toLocaleString('en-US')} messages from the -${next.nextTier.discountPct}% tier`,
-      textPt: `Sua projecao de ${volume.toLocaleString('pt-BR')} mensagens ${category} por mes esta a ${next.messagesAway} do tier -${next.nextTier.discountPct}%. Cruzando o limite, o rate cai de ${both(toMicros(next.currentRate), ctx.currency).pt} para ${both(toMicros(next.nextTier.rate), ctx.currency).pt} e o mes fica ${money.pt} mais barato. Os limites de volume ainda nao foram confirmados contra o rate card oficial.`,
-      textEn: `Your projection of ${volume.toLocaleString('en-US')} ${category} messages per month sits ${next.messagesAway} away from the -${next.nextTier.discountPct}% tier. Crossing it drops the rate from ${both(toMicros(next.currentRate), ctx.currency).en} to ${both(toMicros(next.nextTier.rate), ctx.currency).en}, ${money.en} off the month. The volume thresholds are not confirmed against the official rate card yet.`,
-      savingMicros,
+      titlePt: `Faltam ${next.messagesAway.toLocaleString('pt-BR')} mensagens ${category} para o tier -${next.nextTier.discountPct}%`,
+      titleEn: `${next.messagesAway.toLocaleString('en-US')} ${category} messages from the -${next.nextTier.discountPct}% tier`,
+      textPt: `Sua projecao e de ${volume.toLocaleString('pt-BR')} mensagens ${category} por mes, e o tier -${next.nextTier.discountPct}% comeca em ${next.nextTier.from.toLocaleString('pt-BR')}. O desconto e graduado: as mensagens acima desse limite custam ${discounted.pt} em vez de ${current.pt}, ${perMessage.pt} a menos cada, e as que voce ja enviou continuam pelo rate atual. Cruzar o limite nao barateia o volume inteiro.`,
+      textEn: `You project ${volume.toLocaleString('en-US')} ${category} messages a month, and the -${next.nextTier.discountPct}% tier starts at ${next.nextTier.from.toLocaleString('en-US')}. The discount is graduated: messages above that line cost ${discounted.en} instead of ${current.en}, ${perMessage.en} less each, while the ones you already sent stay at the current rate. Crossing the line does not make the whole volume cheaper.`,
+      savingMicros: 0,
     });
   }
   return null;

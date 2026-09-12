@@ -103,9 +103,53 @@ describe('priceTieredVolume', () => {
 describe('distanceToNextTier', () => {
   it('reports how far the next discount is', () => {
     const next = distanceToNextTier(CARD, 'utility', 80)!;
-    expect(next.messagesAway).toBe(20);
+    expect(next.messagesAway).toBe(21);
     expect(next.nextTier.discountPct).toBe(10);
     expect(next.currentRate).toBe(0.1);
+  });
+
+  /**
+   * The boundary, message by message. Positions are 0-based, so a business that has billed
+   * exactly `tier.from` messages has filled positions 0..from-1 and its next message is the
+   * first one in the new tier: one away, not zero. Getting this wrong understates the gap
+   * by one at every volume, which is the kind of error nobody notices and everybody
+   * budgets against.
+   */
+  it.each([
+    [79, 22],
+    [80, 21],
+    [98, 3],
+    [99, 2],
+  ])('at volume %i the next tier is %i messages away', (volume, expected) => {
+    expect(distanceToNextTier(CARD, 'utility', volume)!.messagesAway).toBe(expected);
+  });
+
+  it('reports the tier after the one you are already in', () => {
+    // At a volume of exactly 100 the next message lands at position 100, which is already
+    // the -10% tier: you have arrived, so what is ahead is the tier beyond it.
+    const next = distanceToNextTier(CARD, 'utility', 100)!;
+    expect(next.currentRate).toBe(0.09);
+    expect(next.nextTier.rate).toBe(0.08);
+    expect(next.messagesAway).toBe(201);
+  });
+
+  it('never reports zero, because zero would mean the discount already applied', () => {
+    for (let volume = 0; volume < 100; volume += 7) {
+      expect(distanceToNextTier(CARD, 'utility', volume)!.messagesAway).toBeGreaterThan(0);
+    }
+  });
+
+  it('agrees with the pricer: sending exactly messagesAway lands in the next tier', () => {
+    const volume = 80;
+    const { messagesAway, nextTier } = distanceToNextTier(CARD, 'utility', volume)!;
+
+    // One short: the last message is still at the old rate.
+    const short = priceTieredVolume(CARD, 'utility', messagesAway - 1, volume);
+    expect(short.slices.every((slice) => slice.rate !== nextTier.rate)).toBe(true);
+
+    // Exactly there: the final message is priced at the new tier.
+    const exact = priceTieredVolume(CARD, 'utility', messagesAway, volume);
+    expect(exact.slices[exact.slices.length - 1]!.rate).toBe(nextTier.rate);
   });
 
   it('returns null at the top tier', () => {

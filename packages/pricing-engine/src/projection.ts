@@ -126,8 +126,11 @@ export function projectMonthly(
       const allowance = ruleSet.serviceFreeAllowancePerMonth * phoneNumbers;
       const freeByAllowance = Math.min(input.service, allowance);
       const chargedMessages = input.service - freeByAllowance;
+      // When service does take volume tiers, it shares the market's utility pool rather
+      // than opening one of its own — so it accrues on top of the utility volume already
+      // counted this month. Starting from zero here would silently under-price the month.
       const cost = ruleSet.serviceUsesVolumeTiers
-        ? priceTieredVolume(rateCard, 'utility', chargedMessages)
+        ? priceTieredVolume(rateCard, 'utility', chargedMessages, input.utility)
         : {
             slices: chargedMessages
               ? [

@@ -119,7 +119,13 @@ export function priceTieredVolume(
 }
 
 /**
- * Messages still to go before the next tier kicks in, and what that tier would save.
+ * Billable messages still to send before a message lands in the next tier.
+ *
+ * Off-by-one matters here and the naive subtraction gets it wrong. Positions are 0-based:
+ * with 250,000 messages already billed, those occupy positions 0..249,999 and the next
+ * message sits at position 250,000, which is the first one in the -5% tier. So a business
+ * at exactly the threshold volume is one message away, not zero.
+ *
  * Returns null at the top tier or when the card has no table for the category.
  */
 export function distanceToNextTier(
@@ -135,7 +141,7 @@ export function distanceToNextTier(
   const nextTier = table.tiers[nextTierIndex];
   if (!nextTier) return null;
   return {
-    messagesAway: nextTier.from - currentVolume,
+    messagesAway: Math.max(1, nextTier.from - currentVolume + 1),
     nextTier,
     nextTierIndex,
     currentRate: current.tier.rate,
