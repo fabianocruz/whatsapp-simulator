@@ -30,7 +30,7 @@ describe('price command', () => {
     expect(out).toContain('Total: R$ 0,3567');
     expect(out).toContain('marketing');
     expect(out).toContain('Dicas');
-    expect(out).toContain('A cobranca oficial e a da Meta.');
+    expect(out).toContain('A cobrança oficial é a da Meta.');
   });
 
   it('shows the October comparison when asked', async () => {
@@ -49,7 +49,7 @@ describe('price command', () => {
     // rules, it does not bill anyone.
     for (const locale of ['pt', 'en'] as const) {
       const { out } = await capture(() => runPrice({ ...base, locale, scenario: 'otp-authentication' }));
-      expect(out).toContain(locale === 'pt' ? 'A cobranca oficial e a da Meta.' : 'The official bill is Meta');
+      expect(out).toContain(locale === 'pt' ? 'A cobrança oficial é a da Meta.' : 'The official bill is Meta');
     }
   });
 
@@ -64,7 +64,7 @@ describe('price command', () => {
     const { out } = await capture(() =>
       runPrice({ ...base, scenario: 'worked-example-spec', conversationsPerMonth: 30_000 }),
     );
-    expect(out).toContain('Projecao mensal');
+    expect(out).toContain('Projeção mensal');
     // 30,000 utility sits inside Meta's first tier: flat list rate, 30,000 x 0,0350.
     expect(out).toContain('R$ 1.050,00');
   });

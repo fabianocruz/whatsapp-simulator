@@ -84,6 +84,30 @@ h3 {
   outline-offset: 2px;
 }
 
+/*
+ * The chat area scrolls, and a desktop scrollbar painted light over the dark wallpaper
+ * breaks the illusion the whole frame exists to create. A phone shows a thin translucent
+ * overlay instead, so that is what this draws — visible enough to signal "there is more
+ * above", quiet enough to read as part of the device.
+ */
+.wa-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+.wa-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.wa-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.wa-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+}
+.wa-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
 /* The phone frame keeps a WhatsApp-like wallpaper without shipping an image. */
 .wa-wallpaper {
   background-color: #e9e2d8;

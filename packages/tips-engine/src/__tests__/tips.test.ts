@@ -161,7 +161,7 @@ describe('T6 — near the next tier', () => {
     expect(t6.severity).toBe('info');
     // It has to say out loud that the discount is partial.
     expect(t6.textPt).toContain('graduado');
-    expect(t6.textPt).toContain('nao barateia o volume inteiro');
+    expect(t6.textPt).toContain('não barateia o volume inteiro');
     expect(t6.textEn).toContain('graduated');
     expect(t6.textEn).toContain('does not make the whole volume cheaper');
   });

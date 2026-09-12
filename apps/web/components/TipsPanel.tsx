@@ -1,6 +1,7 @@
 'use client';
 
 import type { Tip } from '@dyvit/whatsapp-tips';
+import { autoFractionDigits } from '@dyvit/whatsapp-pricing';
 import type { Currency } from '@dyvit/whatsapp-pricing';
 import type { Dictionary, Locale } from '../i18n/dictionary';
 import { money } from '../lib/format';
@@ -52,7 +53,7 @@ export function TipsPanel({ tips, locale, dict, currency, onHighlight }: Props) 
               </p>
               {tip.estimatedSavingMicros > 0 && (
                 <p className="mono mt-1.5 text-[11px] text-[color:var(--color-em)]">
-                  {money(tip.estimatedSaving, currency, locale)} · {dict.estimatedSaving}
+                  {money(tip.estimatedSaving, currency, locale, autoFractionDigits(tip.estimatedSaving))} · {dict.estimatedSaving}
                 </p>
               )}
             </li>

@@ -118,7 +118,7 @@ export function collectDataWarnings(rateCard: RateCard, ruleSet: RuleSet): DataW
       code: 'RATES_UNVERIFIED',
       subject: `${rateCard.market}/${rateCard.currency}@${rateCard.effectiveFrom}`,
       message: {
-        pt: 'Os rates deste mercado ainda nao foram conferidos contra o rate card oficial da Meta.',
+        pt: 'Os rates deste mercado ainda não foram conferidos contra o rate card oficial da Meta.',
         en: 'This market’s rates have not been checked against Meta’s official rate card yet.',
       },
     });
@@ -129,7 +129,7 @@ export function collectDataWarnings(rateCard: RateCard, ruleSet: RuleSet): DataW
         code: 'TIERS_UNVERIFIED',
         subject: `${rateCard.market}/${table.category}`,
         message: {
-          pt: `Os limites de volume dos tiers de ${table.category} sao placeholder, sem fonte oficial. A projecao mensal e ilustrativa.`,
+          pt: `Os limites de volume dos tiers de ${table.category} são placeholder, sem fonte oficial. A projeção mensal é ilustrativa.`,
           en: `The ${table.category} volume-tier thresholds are placeholders with no official source. The monthly projection is illustrative.`,
         },
       });
@@ -140,7 +140,7 @@ export function collectDataWarnings(rateCard: RateCard, ruleSet: RuleSet): DataW
       code: 'RULESET_UNVERIFIED',
       subject: ruleSet.id,
       message: {
-        pt: 'Este ruleset ainda nao foi verificado contra a documentacao oficial.',
+        pt: 'Este ruleset ainda não foi verificado contra a documentação oficial.',
         en: 'This ruleset has not been verified against the official documentation yet.',
       },
     });

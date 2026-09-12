@@ -1,6 +1,6 @@
 {
   "name": "Free entry point via Click-to-WhatsApp",
-  "description": "Cliente chega por anuncio CTWA e o negocio responde em 30 min: 12 mensagens de todos os tipos dentro da janela de 72h. Custo esperado: R$ 0,00.",
+  "description": "Cliente chega por anúncio CTWA e o negócio responde em 30 min: 12 mensagens de todos os tipos dentro da janela de 72h. Custo esperado: R$ 0,00.",
   "market": "BR",
   "currency": "BRL",
   "asOf": "2026-09-01",
@@ -13,7 +13,7 @@
       "contentType": "text",
       "sentAt": "2026-09-01T09:00:00.000Z",
       "status": "delivered",
-      "bodyPreview": "Vi o anuncio, quero saber do plano.",
+      "bodyPreview": "Vi o anúncio, quero saber do plano.",
       "entryPoint": "click_to_whatsapp_ad"
     },
     {
@@ -34,7 +34,7 @@
       "contentType": "text",
       "sentAt": "2026-09-01T10:00:00.000Z",
       "status": "delivered",
-      "bodyPreview": "Reservamos sua condicao por 72h.",
+      "bodyPreview": "Reservamos sua condição por 72h.",
       "templateName": "reserva_condicao"
     },
     {
@@ -55,7 +55,7 @@
       "contentType": "text",
       "sentAt": "2026-09-01T11:30:00.000Z",
       "status": "delivered",
-      "bodyPreview": "Da sim, em ate 12x sem juros."
+      "bodyPreview": "Da sim, em até 12x sem juros."
     },
     {
       "id": "m6",
@@ -65,7 +65,7 @@
       "contentType": "text",
       "sentAt": "2026-09-01T12:00:00.000Z",
       "status": "delivered",
-      "bodyPreview": "Ultimo dia da condicao de lancamento.",
+      "bodyPreview": "Último dia da condição de lançamento.",
       "templateName": "promo_lancamento"
     },
     {
@@ -96,7 +96,7 @@
       "contentType": "text",
       "sentAt": "2026-09-02T09:00:00.000Z",
       "status": "delivered",
-      "bodyPreview": "Seu codigo de verificacao e 418902.",
+      "bodyPreview": "Seu código de verificação e 418902.",
       "templateName": "otp_login"
     },
     {

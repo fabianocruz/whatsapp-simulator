@@ -27,9 +27,21 @@ export function sumMicros(values: readonly number[]): number {
 }
 
 /**
+ * How many decimals an amount deserves.
+ *
+ * Meta publishes rates at four decimals, and rounding a per-message rate to cents hides the
+ * difference between R$ 0,0350 and R$ 0,0263. Above one unit that precision stops meaning
+ * anything and starts reading as sloppy: a monthly total belongs as R$ 73.465,00, not
+ * R$ 73.465,0000.
+ */
+export function autoFractionDigits(amount: number): 2 | 4 {
+  return Math.abs(amount) >= 1 ? 2 : 4;
+}
+
+/**
  * Formats an amount for display. Four decimals by default because that is the precision
- * Meta publishes rates at, and rounding a per-message rate to cents hides the difference
- * between R$ 0,0350 and R$ 0,0263.
+ * Meta publishes rates at; pass `autoFractionDigits(amount)` for figures that span both
+ * per-message rates and monthly totals.
  */
 export function formatMoney(
   amount: number,

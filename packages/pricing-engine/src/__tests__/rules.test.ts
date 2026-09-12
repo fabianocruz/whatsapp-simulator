@@ -107,7 +107,7 @@ describe('R6 — service', () => {
     const listRate = priceConversation([inbound(0), service(1)], { asOf: OCTOBER }).decisions[1]!;
     expect(listRate.reasonCode).toBe('BILLABLE_SERVICE');
     expect(listRate.explanation.pt).toContain('rate de lista');
-    expect(listRate.explanation.pt).toContain('projecao mensal');
+    expect(listRate.explanation.pt).toContain('projeção mensal');
     expect(listRate.explanation.pt).not.toContain('consumida');
     expect(listRate.explanation.en).toContain('list rate');
     expect(listRate.explanation.en).not.toContain('used up');

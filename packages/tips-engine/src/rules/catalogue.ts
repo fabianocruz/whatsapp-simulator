@@ -24,7 +24,7 @@ export const consolidateReplies: TipRule = (ctx) => {
     currency: ctx.currency,
     titlePt: 'Consolide suas respostas',
     titleEn: 'Consolidate your replies',
-    textPt: `Voce tem ${extraMessages + runs.length} respostas seguidas em ${runs.length} ${runs.length === 1 ? 'trecho' : 'trechos'} da conversa. Cada mensagem de service vira cobrada em 01/10/2026: juntando cada sequencia em uma mensagem so voce deixa de pagar ${extraMessages} ${extraMessages === 1 ? 'cobranca' : 'cobrancas'}, ${money.pt} por conversa. Vale a partir da 1.001a mensagem de service do mes: abaixo disso a franquia ja cobre.`,
+    textPt: `Você tem ${extraMessages + runs.length} respostas seguidas em ${runs.length} ${runs.length === 1 ? 'trecho' : 'trechos'} da conversa. Cada mensagem de service vira cobrada em 01/10/2026: juntando cada sequência em uma mensagem só você deixa de pagar ${extraMessages} ${extraMessages === 1 ? 'cobrança' : 'cobranças'}, ${money.pt} por conversa. Vale a partir da 1.001ª mensagem de service do mês: abaixo disso a franquia já cobre.`,
     textEn: `You send ${extraMessages + runs.length} back-to-back replies across ${runs.length} ${runs.length === 1 ? 'stretch' : 'stretches'} of the conversation. Every service message becomes billable on 2026-10-01: merging each stretch into one message drops ${extraMessages} ${extraMessages === 1 ? 'charge' : 'charges'}, ${money.en} per conversation. This bites from the 1,001st service message of the month onward; below that the allowance already covers you.`,
     savingMicros,
   });
@@ -52,7 +52,7 @@ export const reorderIntoWindow: TipRule = (ctx) => {
     currency: ctx.currency,
     titlePt: 'Reordene para dentro da janela',
     titleEn: 'Reorder into the window',
-    textPt: `${offending.length} template${offending.length === 1 ? '' : 's'} utility ${offending.length === 1 ? 'saiu' : 'sairam'} depois que a janela de 24h do usuario fechou. Responder ainda dentro da janela zera esse custo ate 30/09/2026: ${money.pt} por conversa.`,
+    textPt: `${offending.length} template${offending.length === 1 ? '' : 's'} utility ${offending.length === 1 ? 'saiu' : 'sairam'} depois que a janela de 24h do usuário fechou. Responder ainda dentro da janela zera esse custo até 30/09/2026: ${money.pt} por conversa.`,
     textEn: `${offending.length} utility template${offending.length === 1 ? '' : 's'} went out after the customer's 24h window closed. Answering inside the window zeroes that cost until 2026-09-30: ${money.en} per conversation.`,
     savingMicros,
   });
@@ -81,7 +81,7 @@ export const suspectedMiscategory: TipRule = (ctx) => {
     currency: ctx.currency,
     titlePt: 'Revise a categoria do template',
     titleEn: 'Review the template category',
-    textPt: `O conteudo de ${billed.length} template${billed.length === 1 ? '' : 's'} de marketing parece transacional. Marketing custa ${marketing.pt} contra ${utility.pt} de utility: reclassificar economizaria ${money.pt}. A classificacao final e da Meta, entao trate isso como hipotese a validar.`,
+    textPt: `O conteúdo de ${billed.length} template${billed.length === 1 ? '' : 's'} de marketing parece transacional. Marketing custa ${marketing.pt} contra ${utility.pt} de utility: reclassificar economizaria ${money.pt}. A classificação final é da Meta, então trate isso como hipótese a validar.`,
     textEn: `${billed.length} marketing template${billed.length === 1 ? '' : 's'} read${billed.length === 1 ? 's' : ''} as transactional. Marketing costs ${marketing.en} against ${utility.en} for utility, so reclassifying would save ${money.en}. Meta makes the final call, so treat this as a hypothesis to validate.`,
     savingMicros,
   });
@@ -101,9 +101,9 @@ export const useFreeEntryPoint: TipRule = (ctx) => {
     severity: 'saving',
     triggeredBy: ctx.priced.decisions.filter((d) => d.billable).map((d) => d.messageId),
     currency: ctx.currency,
-    titlePt: 'Traga o trafego por Click-to-WhatsApp',
+    titlePt: 'Traga o tráfego por Click-to-WhatsApp',
     titleEn: 'Bring traffic in through Click-to-WhatsApp',
-    textPt: `Esta conversa comeca sem free entry point. Anuncios Click-to-WhatsApp e CTAs de Pagina abrem 72h em que tudo e gratis, templates inclusive. Se o cliente tivesse chegado por ali, esta conversa custaria ${both(0, ctx.currency).pt} em vez de ${money.pt}.`,
+    textPt: `Esta conversa começa sem free entry point. Anúncios Click-to-WhatsApp e CTAs de Página abrem 72h em que tudo é grátis, templates inclusive. Se o cliente tivesse chegado por ali, esta conversa custaria ${both(0, ctx.currency).pt} em vez de ${money.pt}.`,
     textEn: `This conversation starts with no free entry point. Click-to-WhatsApp ads and Page CTAs open a 72h window where everything is free, templates included. Had the customer arrived that way, this conversation would cost ${both(0, ctx.currency).en} instead of ${money.en}.`,
     savingMicros,
   });
@@ -128,9 +128,9 @@ export const collectWithFlows: TipRule = (ctx) => {
     severity: 'saving',
     triggeredBy: questions.map((m) => m.id),
     currency: ctx.currency,
-    titlePt: 'Colete os dados em uma interacao',
+    titlePt: 'Colete os dados em uma interação',
     titleEn: 'Collect the data in one interaction',
-    textPt: `O bot faz ${questions.length} perguntas soltas para coletar dados. Um WhatsApp Flow ou uma lista de botoes coleta tudo em 1 interacao em vez de ${questions.length} mensagens cobradas a partir de 01/10/2026: ${money.pt} por conversa, contando da 1.001a mensagem de service do mes em diante.`,
+    textPt: `O bot faz ${questions.length} perguntas soltas para coletar dados. Um WhatsApp Flow ou uma lista de botões coleta tudo em 1 interação em vez de ${questions.length} mensagens cobradas a partir de 01/10/2026: ${money.pt} por conversa, contando da 1.001ª mensagem de service do mês em diante.`,
     textEn: `The bot asks ${questions.length} separate questions to collect data. A WhatsApp Flow or a button list collects it in one interaction instead of ${questions.length} messages that become billable on 2026-10-01: ${money.en} per conversation, counting from the 1,001st service message of the month onward.`,
     savingMicros,
   });
@@ -170,7 +170,7 @@ export const nearNextTier: TipRule = (ctx) => {
       currency: ctx.currency,
       titlePt: `Faltam ${next.messagesAway.toLocaleString('pt-BR')} mensagens ${category} para o tier -${next.nextTier.discountPct}%`,
       titleEn: `${next.messagesAway.toLocaleString('en-US')} ${category} messages from the -${next.nextTier.discountPct}% tier`,
-      textPt: `Sua projecao e de ${volume.toLocaleString('pt-BR')} mensagens ${category} por mes, e o tier -${next.nextTier.discountPct}% comeca em ${next.nextTier.from.toLocaleString('pt-BR')}. O desconto e graduado: as mensagens acima desse limite custam ${discounted.pt} em vez de ${current.pt}, ${perMessage.pt} a menos cada, e as que voce ja enviou continuam pelo rate atual. Cruzar o limite nao barateia o volume inteiro.`,
+      textPt: `Sua projeção é de ${volume.toLocaleString('pt-BR')} mensagens ${category} por mês, e o tier -${next.nextTier.discountPct}% começa em ${next.nextTier.from.toLocaleString('pt-BR')}. O desconto é graduado: as mensagens acima desse limite custam ${discounted.pt} em vez de ${current.pt}, ${perMessage.pt} a menos cada, e as que você já enviou continuam pelo rate atual. Cruzar o limite não barateia o volume inteiro.`,
       textEn: `You project ${volume.toLocaleString('en-US')} ${category} messages a month, and the -${next.nextTier.discountPct}% tier starts at ${next.nextTier.from.toLocaleString('en-US')}. The discount is graduated: messages above that line cost ${discounted.en} instead of ${current.en}, ${perMessage.en} less each, while the ones you already sent stay at the current rate. Crossing the line does not make the whole volume cheaper.`,
       savingMicros: 0,
     });
@@ -190,7 +190,7 @@ export const failedMessages: TipRule = (ctx) => {
     currency: ctx.currency,
     titlePt: 'Falhas de entrega derrubam seu quality rating',
     titleEn: 'Delivery failures hurt your quality rating',
-    textPt: `${failed.length} mensagem${failed.length === 1 ? '' : 's'} falhou na entrega. Falha nao gera cobranca, mas derruba o quality rating do numero e pode reduzir seus limites de envio. Revise opt-in, numero do destinatario e qualidade do template.`,
+    textPt: `${failed.length} mensagem${failed.length === 1 ? '' : 's'} falhou na entrega. Falha não gera cobrança, mas derruba o quality rating do número e pode reduzir seus limites de envio. Revise opt-in, número do destinatário e qualidade do template.`,
     textEn: `${failed.length} message${failed.length === 1 ? '' : 's'} failed to deliver. A failure is not charged, but it does drag down the number's quality rating and can cut your messaging limits. Check opt-in, the recipient number and template quality.`,
     savingMicros: 0,
   });
@@ -218,7 +218,7 @@ export const serviceAllowanceBlown: TipRule = (ctx) => {
     currency: ctx.currency,
     titlePt: 'Sua franquia de service messages estoura',
     titleEn: 'Your service message allowance runs out',
-    textPt: `No ruleset de 01/10/2026 voce projeta ${projected.toLocaleString('pt-BR')} mensagens de service por mes contra uma franquia de ${allowance.toLocaleString('pt-BR')}. As ${excess.toLocaleString('pt-BR')} excedentes custam ${money.pt} por mes. Consolide respostas ou mova o que for transacional para templates utility.`,
+    textPt: `No ruleset de 01/10/2026 você projeta ${projected.toLocaleString('pt-BR')} mensagens de service por mês contra uma franquia de ${allowance.toLocaleString('pt-BR')}. As ${excess.toLocaleString('pt-BR')} excedentes custam ${money.pt} por mês. Consolide respostas ou mova o que for transacional para templates utility.`,
     textEn: `Under the 2026-10-01 ruleset you project ${projected.toLocaleString('en-US')} service messages a month against an allowance of ${allowance.toLocaleString('en-US')}. The ${excess.toLocaleString('en-US')} over the line cost ${money.en} a month. Consolidate replies, or move the transactional ones to utility templates.`,
     savingMicros,
   });
@@ -238,9 +238,9 @@ export const costPerResolution: TipRule = (ctx) => {
     severity: 'info',
     triggeredBy: [],
     currency: ctx.currency,
-    titlePt: 'Meca custo por conversa resolvida',
+    titlePt: 'Meça custo por conversa resolvida',
     titleEn: 'Measure cost per resolved conversation',
-    textPt: `Esta conversa tem ${ctx.sorted.length} mensagens e custa ${today.pt} hoje, ${future.pt} a partir de 01/10/2026. Em suporte, o numero que importa nao e custo por mensagem: e quanto custa resolver um caso. Use este valor como a sua linha de base.`,
+    textPt: `Esta conversa tem ${ctx.sorted.length} mensagens e custa ${today.pt} hoje, ${future.pt} a partir de 01/10/2026. Em suporte, o número que importa não é custo por mensagem: é quanto custa resolver um caso. Use este valor como a sua linha de base.`,
     textEn: `This conversation runs ${ctx.sorted.length} messages and costs ${today.en} today, ${future.en} from 2026-10-01. In support the number that matters is not cost per message, it is cost per resolved case. Use this as your baseline.`,
     savingMicros: 0,
   });

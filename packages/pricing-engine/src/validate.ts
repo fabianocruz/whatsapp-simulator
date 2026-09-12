@@ -20,7 +20,7 @@ export function validateTimeline(messages: readonly SimMessage[]): ValidationIss
         code: 'DUPLICATE_MESSAGE_ID',
         messageId: message.id,
         message: {
-          pt: `Id de mensagem repetido: "${message.id}". Cada mensagem precisa de um id unico.`,
+          pt: `Id de mensagem repetido: "${message.id}". Cada mensagem precisa de um id único.`,
           en: `Duplicate message id: "${message.id}". Every message needs a unique id.`,
         },
       });
@@ -35,7 +35,7 @@ export function validateTimeline(messages: readonly SimMessage[]): ValidationIss
         code: 'INVALID_TIMESTAMP',
         messageId: message.id,
         message: {
-          pt: `Timestamp invalido: "${message.sentAt}".`,
+          pt: `Timestamp inválido: "${message.sentAt}".`,
           en: `Invalid timestamp: "${message.sentAt}".`,
         },
       });
@@ -47,7 +47,7 @@ export function validateTimeline(messages: readonly SimMessage[]): ValidationIss
           code: 'OUT_OF_ORDER_TIMESTAMP',
           messageId: message.id,
           message: {
-            pt: 'Mensagem fora de ordem cronologica. O motor reordena para calcular, mas a timeline exibida pode confundir.',
+            pt: 'Mensagem fora de ordem cronológica. O motor reordena para calcular, mas a timeline exibida pode confundir.',
             en: 'Message is out of chronological order. The engine sorts before pricing, but the rendered timeline may read oddly.',
           },
         });

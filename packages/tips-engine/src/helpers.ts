@@ -1,4 +1,4 @@
-import { formatMoney, fromMicros, toMicros } from '@dyvit/whatsapp-pricing';
+import { autoFractionDigits, formatMoney, fromMicros, toMicros } from '@dyvit/whatsapp-pricing';
 import type { Currency, SimMessage } from '@dyvit/whatsapp-pricing';
 import type { Tip, TipSeverity } from './types';
 
@@ -32,12 +32,19 @@ export function tip(draft: TipDraft): Tip {
   };
 }
 
-/** Money rendered in both languages, for building tip copy. */
+/**
+ * Money rendered in both languages, for building tip copy.
+ *
+ * Decimals adapt to the size of the figure: a tip quotes per-message rates (R$ 0,0017) and
+ * monthly totals (R$ 73.465,00) in the same sentence, and four decimals on the second one
+ * reads as a machine that does not know what it is talking about.
+ */
 export function both(micros: number, currency: Currency): { pt: string; en: string } {
   const amount = fromMicros(micros);
+  const digits = autoFractionDigits(amount);
   return {
-    pt: formatMoney(amount, currency, 'pt-BR'),
-    en: formatMoney(amount, currency, 'en-US'),
+    pt: formatMoney(amount, currency, 'pt-BR', digits),
+    en: formatMoney(amount, currency, 'en-US', digits),
   };
 }
 

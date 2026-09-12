@@ -1,5 +1,5 @@
 {
-  "name": "Exemplo trabalhado da spec (secao 6.5)",
+  "name": "Exemplo trabalhado da spec (seção 6.5)",
   "description": "Marketing fora de janela, cliente responde, duas respostas dentro da CSW e um utility depois que a janela fecha. Custo esperado: R$ 0,3567 hoje e R$ 0,4267 a partir de 01/10/2026.",
   "market": "BR",
   "currency": "BRL",
@@ -14,7 +14,7 @@
       "templateName": "promo_setembro",
       "sentAt": "2026-09-01T10:00:00.000Z",
       "status": "delivered",
-      "bodyPreview": "Promocao de setembro: 20% off ate domingo."
+      "bodyPreview": "Promoção de setembro: 20% off até domingo."
     },
     {
       "id": "m2",

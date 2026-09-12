@@ -112,7 +112,7 @@ async function build(market, currency, effectiveFrom) {
     sourceUrl: PRICING_PAGE,
     verifiedAt: new Date().toISOString().slice(0, 10),
     notes: {
-      pt: `Rate card oficial ${market}/${currency}, extraido de ${PRICING_PAGE} por scripts/fetch-rate-card.mjs. Impostos brasileiros podem incidir sobre estes valores.`,
+      pt: `Rate card oficial ${market}/${currency}, extraído de ${PRICING_PAGE} por scripts/fetch-rate-card.mjs. Impostos brasileiros podem incidir sobre estes valores.`,
       en: `Official ${market}/${currency} rate card, pulled from ${PRICING_PAGE} by scripts/fetch-rate-card.mjs. Brazilian taxes may apply on top of these amounts.`,
     },
   };

@@ -1,4 +1,4 @@
-import { formatMoney, REASON_LABELS, toCsv } from '@dyvit/whatsapp-pricing';
+import { autoFractionDigits, formatMoney, REASON_LABELS, toCsv } from '@dyvit/whatsapp-pricing';
 import type { PricedConversation, SimMessage } from '@dyvit/whatsapp-pricing';
 import type { Tip } from '@dyvit/whatsapp-tips';
 
@@ -75,13 +75,15 @@ export function renderSummary(priced: PricedConversation, locale: Locale): strin
 }
 
 export function renderTips(tips: readonly Tip[], locale: Locale): string {
-  if (tips.length === 0) return locale === 'pt' ? '(sem dicas para este cenario)' : '(no tips for this scenario)';
+  if (tips.length === 0) return locale === 'pt' ? '(sem dicas para este cenário)' : '(no tips for this scenario)';
   return tips
     .map((tip) => {
       const title = locale === 'pt' ? tip.titlePt : tip.titleEn;
       const text = locale === 'pt' ? tip.textPt : tip.textEn;
       const saving =
-        tip.estimatedSavingMicros > 0 ? ` [${money(tip.estimatedSaving, tip.currency, locale)}]` : '';
+        tip.estimatedSavingMicros > 0
+          ? ` [${money(tip.estimatedSaving, tip.currency, locale, autoFractionDigits(tip.estimatedSaving))}]`
+          : '';
       return `[${tip.ruleId}] ${title}${saving}\n    ${text}`;
     })
     .join('\n\n');

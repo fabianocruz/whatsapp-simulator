@@ -89,7 +89,7 @@ export async function runPrice(options: PriceOptions): Promise<number> {
     out.push('');
     out.push(
       pt
-        ? `Comparacao com 01/10/2026: ${money(comparison.current.total, currency, 'pt')} -> ${money(comparison.future.total, currency, 'pt')} (${comparison.delta >= 0 ? '+' : ''}${money(comparison.delta, currency, 'pt')})`
+        ? `Comparação com 01/10/2026: ${money(comparison.current.total, currency, 'pt')} -> ${money(comparison.future.total, currency, 'pt')} (${comparison.delta >= 0 ? '+' : ''}${money(comparison.delta, currency, 'pt')})`
         : `Compared with 2026-10-01: ${money(comparison.current.total, currency, 'en')} -> ${money(comparison.future.total, currency, 'en')} (${comparison.delta >= 0 ? '+' : ''}${money(comparison.delta, currency, 'en')})`,
     );
   }
@@ -98,7 +98,7 @@ export async function runPrice(options: PriceOptions): Promise<number> {
     out.push('');
     out.push(
       pt
-        ? `Projecao mensal (${options.conversationsPerMonth!.toLocaleString('pt-BR')} conversas): ${money(projection.total, currency, 'pt', 2)}`
+        ? `Projeção mensal (${options.conversationsPerMonth!.toLocaleString('pt-BR')} conversas): ${money(projection.total, currency, 'pt', 2)}`
         : `Monthly projection (${options.conversationsPerMonth!.toLocaleString('en-US')} conversations): ${money(projection.total, currency, 'en', 2)}`,
     );
     for (const category of projection.categories) {
@@ -106,7 +106,7 @@ export async function runPrice(options: PriceOptions): Promise<number> {
         `  ${category.category}: ${category.messages.toLocaleString(pt ? 'pt-BR' : 'en-US')} ${pt ? 'msgs' : 'msgs'} -> ${money(category.amount, currency, options.locale, 2)}` +
           (category.freeByAllowance > 0
             ? pt
-              ? ` (${category.freeByAllowance.toLocaleString('pt-BR')} gratis pela franquia)`
+              ? ` (${category.freeByAllowance.toLocaleString('pt-BR')} grátis pela franquia)`
               : ` (${category.freeByAllowance.toLocaleString('en-US')} free via allowance)`
             : ''),
       );
@@ -133,7 +133,7 @@ export async function runPrice(options: PriceOptions): Promise<number> {
   out.push('');
   out.push(
     pt
-      ? 'Simulacao educacional. A cobranca oficial e a da Meta.'
+      ? 'Simulação educacional. A cobrança oficial é a da Meta.'
       : 'Educational simulation. The official bill is Meta’s.',
   );
 
