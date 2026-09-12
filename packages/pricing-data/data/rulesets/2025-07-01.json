@@ -1,0 +1,19 @@
+{
+  "id": "ruleset-2025-07-01",
+  "effectiveFrom": "2025-07-01",
+  "effectiveTo": "2026-09-30",
+  "model": "PMP",
+  "serviceMessagesBillable": false,
+  "utilityFreeInCSW": true,
+  "serviceFreeAllowancePerMonth": 0,
+  "serviceUsesVolumeTiers": false,
+  "cswHours": 24,
+  "fepHours": 72,
+  "fepResponseWindowHours": 24,
+  "notes": {
+    "pt": "Modelo per-message desde 01/07/2025. Non-template gratis desde 01/11/2024; utility dentro da CSW gratis desde 01/07/2025.",
+    "en": "Per-message model since 2025-07-01. Non-template free since 2024-11-01; utility inside the CSW free since 2025-07-01."
+  },
+  "sourceUrl": "https://developers.facebook.com/docs/whatsapp/pricing/updates-to-pricing/",
+  "verified": true
+}

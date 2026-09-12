@@ -1,0 +1,27 @@
+{
+  "name": "@dyvit/whatsapp-simulator",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Cost-aware WhatsApp development environment: phone-frame emulator + deterministic pricing engine + optimization tips.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@9.12.3",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint:data": "pnpm --filter @dyvit/whatsapp-pricing-data run check",
+    "dev:web": "pnpm --filter @dyvit/whatsapp-simulator-web run dev",
+    "build:web": "pnpm --filter @dyvit/whatsapp-simulator-web run build",
+    "cli": "pnpm --filter @dyvit/whatsapp-simulator-cli run dev",
+    "typecheck:web": "tsc -p apps/web/tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

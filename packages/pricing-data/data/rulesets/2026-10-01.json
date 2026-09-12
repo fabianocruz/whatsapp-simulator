@@ -1,0 +1,22 @@
+{
+  "id": "ruleset-2026-10-01",
+  "effectiveFrom": "2026-10-01",
+  "effectiveTo": null,
+  "model": "PMP",
+  "serviceMessagesBillable": true,
+  "utilityFreeInCSW": false,
+  "serviceFreeAllowancePerMonth": 1000,
+  "serviceUsesVolumeTiers": false,
+  "cswHours": 24,
+  "fepHours": 72,
+  "fepResponseWindowHours": 24,
+  "notes": {
+    "pt": "A partir de 01/10/2026 service messages sao cobradas ao rate de utility/authentication do mercado, com franquia de 1.000 mensagens gratis por mes por numero de telefone (sem acumulo). Utility dentro da CSW volta a ser cobrado. FEP de 72h continua gratis.",
+    "en": "From 2026-10-01 service messages are billed at the market utility/authentication rate, with an allowance of 1,000 free messages per month per phone number (no rollover). Utility inside the CSW becomes billable again. The 72h FEP stays free."
+  },
+  "sourceUrl": "https://developers.facebook.com/docs/whatsapp/pricing/updates-to-pricing/",
+  "verified": true,
+  "unverified": {
+    "serviceUsesVolumeTiers": "A Meta anuncia o rate de service como 'o mesmo de utility/authentication do mercado' mas nao confirma se os tiers de volume se aplicam. Assumimos rate de lista (sem tier) ate confirmacao."
+  }
+}

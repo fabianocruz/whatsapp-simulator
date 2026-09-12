@@ -1,0 +1,143 @@
+{
+  "name": "Suporte longo sem CTWA",
+  "description": "Treze mensagens de suporte com respostas consecutivas, um utility fora da janela e um template com falha. Cenario base para o motor de dicas.",
+  "market": "BR",
+  "currency": "BRL",
+  "asOf": "2026-09-01",
+  "messages": [
+    {
+      "id": "m1",
+      "direction": "user_to_business",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T09:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Minha fatura veio errada.",
+      "entryPoint": "organic"
+    },
+    {
+      "id": "m2",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T09:12:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Oi! Sinto muito."
+    },
+    {
+      "id": "m3",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T09:18:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Pode confirmar o numero da fatura?"
+    },
+    {
+      "id": "m4",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T09:24:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "E o CPF do titular?"
+    },
+    {
+      "id": "m5",
+      "direction": "user_to_business",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T10:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Fatura 90210, CPF 123.456.789-00."
+    },
+    {
+      "id": "m6",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T10:12:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Qual o mes de referencia?"
+    },
+    {
+      "id": "m7",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T10:18:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "E qual valor voce esperava?"
+    },
+    {
+      "id": "m8",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T10:24:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Voce prefere estorno ou credito?"
+    },
+    {
+      "id": "m9",
+      "direction": "user_to_business",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T11:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Agosto, esperava R$ 120, prefiro credito."
+    },
+    {
+      "id": "m10",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T11:12:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Fechado, gerando o credito."
+    },
+    {
+      "id": "m11",
+      "direction": "business_to_user",
+      "kind": "template",
+      "category": "utility",
+      "contentType": "text",
+      "sentAt": "2026-09-01T12:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Credito de R$ 38,40 aplicado na fatura 90210.",
+      "templateName": "credito_aplicado"
+    },
+    {
+      "id": "m12",
+      "direction": "business_to_user",
+      "kind": "template",
+      "category": "utility",
+      "contentType": "text",
+      "sentAt": "2026-09-02T15:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Sua nova fatura ja esta disponivel.",
+      "templateName": "fatura_disponivel"
+    },
+    {
+      "id": "m13",
+      "direction": "business_to_user",
+      "kind": "template",
+      "category": "marketing",
+      "contentType": "text",
+      "sentAt": "2026-09-02T16:00:00.000Z",
+      "status": "failed",
+      "bodyPreview": "Confira o status do seu pedido de portabilidade.",
+      "templateName": "status_portabilidade"
+    }
+  ]
+}

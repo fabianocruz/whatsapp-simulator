@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+/*
+ * Dyvit design tokens. Paper is the canvas, never pure white; emerald is reserved for
+ * status dots, section labels, the free/Pix accents and the rare primary CTA.
+ */
+@theme {
+  --color-paper: #f8f6f2;
+  --color-paper-dk: #eeeae3;
+  --color-paper-dkk: #e4dfd6;
+  --color-ink: #111110;
+  --color-ink-70: rgba(17, 17, 16, 0.7);
+  --color-ink-40: rgba(17, 17, 16, 0.4);
+  --color-ink-15: rgba(17, 17, 16, 0.15);
+  --color-ink-07: rgba(17, 17, 16, 0.07);
+  --color-ink-04: rgba(17, 17, 16, 0.04);
+  --color-em: #0a6e4a;
+  --color-em-lt: #0f8f60;
+  --color-em-bg: rgba(10, 110, 74, 0.08);
+  --color-em-border: rgba(10, 110, 74, 0.25);
+  --color-night: #0b0f0d;
+  --color-night-2: #141a17;
+  --color-alert: #9a3412;
+  --color-alert-bg: rgba(154, 52, 18, 0.08);
+
+  --radius-r: 10px;
+  --radius-r-lg: 18px;
+  --radius-r-xl: 26px;
+
+  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+html {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-display);
+  font-weight: 300;
+  letter-spacing: -0.01em;
+}
+
+/* Display type: heavy and tight, per the brand system. */
+h1,
+h2,
+h3 {
+  font-weight: 800;
+  letter-spacing: -0.05em;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-em);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  padding: 10px 16px;
+  border-radius: var(--radius-r);
+}
+.skip-link:focus {
+  left: 12px;
+  top: 12px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-em);
+  outline-offset: 2px;
+}
+
+/* The phone frame keeps a WhatsApp-like wallpaper without shipping an image. */
+.wa-wallpaper {
+  background-color: #e9e2d8;
+  background-image:
+    radial-gradient(rgba(17, 17, 16, 0.05) 1px, transparent 1px),
+    radial-gradient(rgba(17, 17, 16, 0.04) 1px, transparent 1px);
+  background-size: 26px 26px, 26px 26px;
+  background-position: 0 0, 13px 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

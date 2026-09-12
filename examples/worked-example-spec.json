@@ -1,0 +1,63 @@
+{
+  "name": "Exemplo trabalhado da spec (secao 6.5)",
+  "description": "Marketing fora de janela, cliente responde, duas respostas dentro da CSW e um utility depois que a janela fecha. Custo esperado: R$ 0,3567 hoje e R$ 0,4267 a partir de 01/10/2026.",
+  "market": "BR",
+  "currency": "BRL",
+  "asOf": "2026-09-01",
+  "messages": [
+    {
+      "id": "m1",
+      "direction": "business_to_user",
+      "kind": "template",
+      "category": "marketing",
+      "contentType": "text",
+      "templateName": "promo_setembro",
+      "sentAt": "2026-09-01T10:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Promocao de setembro: 20% off ate domingo."
+    },
+    {
+      "id": "m2",
+      "direction": "user_to_business",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "entryPoint": "organic",
+      "sentAt": "2026-09-01T12:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Esse desconto vale para o plano anual?"
+    },
+    {
+      "id": "m3",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T13:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Vale sim, para o plano anual e para o mensal."
+    },
+    {
+      "id": "m4",
+      "direction": "business_to_user",
+      "kind": "template",
+      "category": "utility",
+      "contentType": "text",
+      "templateName": "confirmacao_pedido",
+      "sentAt": "2026-09-01T14:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Pedido #4812 confirmado."
+    },
+    {
+      "id": "m5",
+      "direction": "business_to_user",
+      "kind": "template",
+      "category": "utility",
+      "contentType": "text",
+      "templateName": "status_pedido",
+      "sentAt": "2026-09-02T16:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Seu pedido #4812 saiu para entrega."
+    }
+  ]
+}

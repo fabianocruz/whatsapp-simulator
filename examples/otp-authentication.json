@@ -1,0 +1,42 @@
+{
+  "name": "OTP / authentication",
+  "description": "Tres codigos de verificacao. Authentication e sempre cobrado, dentro ou fora de janela.",
+  "market": "BR",
+  "currency": "BRL",
+  "asOf": "2026-09-01",
+  "messages": [
+    {
+      "id": "m1",
+      "direction": "business_to_user",
+      "kind": "template",
+      "category": "authentication",
+      "contentType": "text",
+      "sentAt": "2026-09-01T09:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Seu codigo de acesso e 771204.",
+      "templateName": "otp_login"
+    },
+    {
+      "id": "m2",
+      "direction": "business_to_user",
+      "kind": "template",
+      "category": "authentication",
+      "contentType": "text",
+      "sentAt": "2026-09-02T09:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Seu codigo de acesso e 118345.",
+      "templateName": "otp_login"
+    },
+    {
+      "id": "m3",
+      "direction": "business_to_user",
+      "kind": "template",
+      "category": "authentication",
+      "contentType": "text",
+      "sentAt": "2026-09-03T09:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Seu codigo de acesso e 664219.",
+      "templateName": "otp_login"
+    }
+  ]
+}

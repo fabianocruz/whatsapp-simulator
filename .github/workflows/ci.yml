@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: whatsapp-simulator
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: whatsapp-simulator/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm typecheck:web
+      - run: pnpm test
+      - run: pnpm build:web
+
+  rate-card-freshness:
+    # Meta only changes prices on 01/01, 01/04, 01/07 and 01/10, with at least a month's
+    # notice. This runs monthly so an expiring ruleset is noticed before it expires.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: whatsapp-simulator
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: whatsapp-simulator/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test -- packages/pricing-data
