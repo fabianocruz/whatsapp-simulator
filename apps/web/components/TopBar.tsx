@@ -111,7 +111,7 @@ export function TopBar({
       <label className="block">
         <span className={label}>{dict.scenario}</span>
         <select className={control} value="" onChange={(event) => event.target.value && onLoadScenario(event.target.value)}>
-          <option value="">n/a</option>
+          <option value="">{dict.loadScenario}</option>
           {SCENARIOS.map((scenario) => (
             <option key={scenario.slug} value={scenario.slug}>
               {scenario.name}

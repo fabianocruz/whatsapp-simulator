@@ -9,8 +9,9 @@ nas regras da Meta, com o motivo de cada cobranca e dicas de otimizacao.
 > Simulacao educacional. Nao enviamos mensagens reais e a cobranca oficial e a da Meta.
 > Impostos brasileiros podem incidir sobre os valores mostrados.
 
-![GIF do simulador](docs/simulator.gif)
-<!-- TODO: gravar o GIF do simulador em acao (phone frame + taximetro + toggle 01/10/2026). -->
+![O simulador montando a conversa do exemplo da spec, com o custo por mensagem aparecendo e o comparativo de 01/10/2026 no final](docs/simulator.gif)
+
+<sub>Regerar apos mudanca de UI: `pnpm build:web && node scripts/capture-readme-gif.mjs`</sub>
 
 ## Por que
 

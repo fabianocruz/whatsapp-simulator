@@ -81,6 +81,18 @@ para `types.ts` como o vitest, o tsx e a resolucao `Bundler` do tsc fazem, entao
 `.js` passa no teste e no typecheck e quebra so no `pnpm build:web`. Ha um teste que pega
 isso (`module-specifiers.test.ts`).
 
+## Regerando o GIF do README
+
+Os quadros sao montados a partir de estado codificado na URL, nao de uma gravacao de tela,
+entao o mesmo commit sempre produz o mesmo GIF e mudanca de UI e um comando:
+
+```bash
+pnpm build:web && node scripts/capture-readme-gif.mjs
+```
+
+O script sobe um servidor estatico proprio e dirige o Chrome instalado na maquina via
+playwright-core, sem baixar browser.
+
 ## Rodando
 
 ```bash
