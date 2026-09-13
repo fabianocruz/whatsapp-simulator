@@ -6,6 +6,7 @@ import type { Currency, SimMessage } from '@dyvit/whatsapp-pricing';
 import fepClickToWhatsapp from '../../../examples/fep-click-to-whatsapp.json';
 import otpAuthentication from '../../../examples/otp-authentication.json';
 import suporteLongo from '../../../examples/suporte-longo.json';
+import negociacaoRica from '../../../examples/negociacao-rica.json';
 import workedExample from '../../../examples/worked-example-spec.json';
 
 export interface Scenario {
@@ -30,6 +31,7 @@ export const SCENARIOS: readonly Scenario[] = Object.freeze([
   scenario('fep-click-to-whatsapp', fepClickToWhatsapp),
   scenario('suporte-longo', suporteLongo),
   scenario('otp-authentication', otpAuthentication),
+  scenario('negociacao-rica', negociacaoRica),
 ]);
 
 export function getScenario(slug: string): Scenario {

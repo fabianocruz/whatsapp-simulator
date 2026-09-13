@@ -1,0 +1,216 @@
+{
+  "name": "Negociação com cards, lista e Flow",
+  "description": "Exercita o que um app real envia: botões de resposta rápida, lista de parcelas, Flow de confirmação, template com header de imagem e botões de URL e copiar código, documento e um template com falha.",
+  "market": "BR",
+  "currency": "BRL",
+  "asOf": "2026-09-01",
+  "messages": [
+    {
+      "id": "m1",
+      "direction": "user_to_business",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "entryPoint": "organic",
+      "sentAt": "2026-09-01T09:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Oi, queria negociar minha fatura",
+      "content": {
+        "kind": "text",
+        "body": "Oi, queria negociar minha fatura"
+      }
+    },
+    {
+      "id": "m2",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "interactive_buttons",
+      "sentAt": "2026-09-01T09:06:00.000Z",
+      "status": "read",
+      "bodyPreview": "Como prefere resolver?",
+      "content": {
+        "kind": "buttons",
+        "body": "Claro! Sua fatura de setembro está em R$ 348,90. Como prefere resolver?",
+        "footer": "Escolha uma opção",
+        "buttons": [
+          {
+            "type": "quick_reply",
+            "text": "Pagar à vista"
+          },
+          {
+            "type": "quick_reply",
+            "text": "Parcelar"
+          },
+          {
+            "type": "quick_reply",
+            "text": "Falar com atendente"
+          }
+        ]
+      }
+    },
+    {
+      "id": "m3",
+      "direction": "user_to_business",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T09:12:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Parcelar",
+      "content": {
+        "kind": "text",
+        "body": "Parcelar"
+      }
+    },
+    {
+      "id": "m4",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "interactive_list",
+      "sentAt": "2026-09-01T09:18:00.000Z",
+      "status": "read",
+      "bodyPreview": "Opções de parcelamento",
+      "content": {
+        "kind": "list",
+        "header": "Opções de parcelamento",
+        "body": "Escolha a que couber no seu mês. Sem juros em até 3x.",
+        "footer": "Valores sujeitos a confirmação",
+        "buttonText": "Ver parcelas",
+        "sections": [
+          {
+            "title": "Sem juros",
+            "rows": [
+              {
+                "id": "2x",
+                "title": "2x de R$ 174,45",
+                "description": "Primeira em 05/10"
+              },
+              {
+                "id": "3x",
+                "title": "3x de R$ 116,30",
+                "description": "Primeira em 05/10"
+              }
+            ]
+          },
+          {
+            "title": "Com juros",
+            "rows": [
+              {
+                "id": "6x",
+                "title": "6x de R$ 62,80",
+                "description": "Total R$ 376,80"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "m5",
+      "direction": "user_to_business",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T09:30:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "3x",
+      "content": {
+        "kind": "text",
+        "body": "3x"
+      }
+    },
+    {
+      "id": "m6",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "flow",
+      "sentAt": "2026-09-01T09:36:00.000Z",
+      "status": "read",
+      "bodyPreview": "Confirme seus dados",
+      "content": {
+        "kind": "flow",
+        "header": "Confirmação de dados",
+        "body": "Falta só confirmar seus dados para gerar o acordo.",
+        "footer": "Leva menos de 1 minuto",
+        "ctaText": "Confirmar dados"
+      }
+    },
+    {
+      "id": "m7",
+      "direction": "business_to_user",
+      "kind": "template",
+      "category": "utility",
+      "templateName": "acordo_confirmado",
+      "contentType": "text",
+      "sentAt": "2026-09-02T11:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Acordo confirmado",
+      "content": {
+        "kind": "template",
+        "name": "acordo_confirmado",
+        "header": {
+          "type": "image"
+        },
+        "body": "Acordo fechado! 3x de R$ 116,30, primeira parcela em 05/10.",
+        "footer": "Dyvit · cobrança sem atrito",
+        "buttons": [
+          {
+            "type": "url",
+            "text": "Ver boleto"
+          },
+          {
+            "type": "copy_code",
+            "text": "Copiar código Pix"
+          }
+        ]
+      }
+    },
+    {
+      "id": "m8",
+      "direction": "business_to_user",
+      "kind": "template",
+      "category": "utility",
+      "templateName": "lembrete_parcela",
+      "contentType": "document",
+      "sentAt": "2026-09-03T11:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "comprovante.pdf",
+      "content": {
+        "kind": "media",
+        "media": "document",
+        "filename": "acordo-4812.pdf",
+        "caption": "Seu acordo em PDF."
+      }
+    },
+    {
+      "id": "m9",
+      "direction": "business_to_user",
+      "kind": "template",
+      "category": "marketing",
+      "templateName": "oferta_quitacao",
+      "contentType": "text",
+      "sentAt": "2026-09-04T17:00:00.000Z",
+      "status": "failed",
+      "bodyPreview": "Quite com desconto",
+      "content": {
+        "kind": "template",
+        "name": "oferta_quitacao",
+        "header": {
+          "type": "text",
+          "text": "Oferta de quitação"
+        },
+        "body": "Quite o restante até sexta com 15% de desconto.",
+        "footer": "Válido até 10/10",
+        "buttons": [
+          {
+            "type": "quick_reply",
+            "text": "Quero quitar"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import type { PriceDecision, PricedConversation, SimMessage } from '@dyvit/whats
 import type { Dictionary, Locale } from '../i18n/dictionary';
 import { clockTime, shortDate } from '../lib/format';
 import { InboundBubble, OutboundBubble, SystemMessage } from './ChatBubble';
+import { splitContent } from './MessageContent';
 import { DeviceChrome } from './DeviceChrome';
 import { PriceChip } from './PriceChip';
 import { WA } from './wa-theme';
@@ -79,8 +80,12 @@ export function PhoneFrame({ messages, priced, locale, dict, onOpenTrace, onRemo
     previousCsw = cswOpen;
     previousFep = fepActive;
 
+    // Structured content renders as the real thing: media header, footer, buttons, list.
+    // A hand-written scenario without it still gets a plain bubble with a type glyph.
     const glyph = message.contentType ? CONTENT_GLYPH[message.contentType] : undefined;
-    const body = `${glyph ? `${glyph} ` : ''}${message.bodyPreview || (glyph ? message.contentType : '…')}`;
+    const split = message.content ? splitContent(message.content) : null;
+    const body: ReactNode =
+      split?.body ?? `${glyph ? `${glyph} ` : ''}${message.bodyPreview || (glyph ? message.contentType : '…')}`;
 
     const header =
       message.kind === 'template' ? (
@@ -105,6 +110,7 @@ export function PhoneFrame({ messages, priced, locale, dict, onOpenTrace, onRemo
       onRemove: () => onRemove(message.id),
       removeLabel: `${dict.removeMessage}: ${message.id}`,
       ...(header ? { header } : {}),
+      ...(split?.actions ? { actions: split.actions } : {}),
     };
 
     items.push(

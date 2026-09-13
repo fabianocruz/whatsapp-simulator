@@ -70,6 +70,8 @@ interface BubbleProps {
   header?: ReactNode;
   /** Rendered outside the bubble, for the price chip. */
   chip?: ReactNode;
+  /** Button stack, rendered below the timestamp and edge to edge, as WhatsApp does. */
+  actions?: ReactNode;
   /** Highlight ring, used when a tip points at this message. */
   highlighted?: boolean;
   onRemove?: () => void;
@@ -82,12 +84,15 @@ function Bubble({
   status,
   header,
   chip,
+  actions,
   highlighted,
   onRemove,
   removeLabel,
   outbound,
 }: BubbleProps & { outbound: boolean }) {
   const background = outbound ? WA.outbound : WA.inbound;
+  // Inline formatting applies to plain strings only; structured content arrives already
+  // rendered and must not be re-parsed for asterisks.
   const formatted = typeof children === 'string' ? formatWhatsApp(children) : children;
 
   return (
@@ -105,17 +110,20 @@ function Bubble({
             aria-hidden="true"
           />
           <div
-            className={`rounded-[10px] px-3 py-2 ${outbound ? 'rounded-tr-none' : 'rounded-tl-none'} ${
+            className={`overflow-hidden rounded-[10px] ${outbound ? 'rounded-tr-none' : 'rounded-tl-none'} ${
               highlighted ? 'outline-2 outline-offset-2 outline-[color:var(--color-em-lt)]' : ''
             }`}
             style={{ backgroundColor: background }}
           >
-            {header}
-            <div className="whitespace-pre-wrap break-words text-[14px] leading-[20px] text-white/95">{formatted}</div>
-            <div className="mt-1 flex items-center justify-end gap-1" style={{ color: WA.timestamp }}>
-              <span className="text-[11px] leading-none">{time}</span>
-              {outbound && status && <Ticks status={status} />}
+            <div className="px-3 py-2">
+              {header}
+              <div className="whitespace-pre-wrap break-words text-[14px] leading-[20px] text-white/95">{formatted}</div>
+              <div className="mt-1 flex items-center justify-end gap-1" style={{ color: WA.timestamp }}>
+                <span className="text-[11px] leading-none">{time}</span>
+                {outbound && status && <Ticks status={status} />}
+              </div>
             </div>
+            {actions}
           </div>
           {onRemove && (
             <button

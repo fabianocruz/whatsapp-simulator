@@ -1,4 +1,5 @@
 import type { Category, Currency, LocalizedText, RateCard, RuleSet, TemplateCategory } from '@dyvit/whatsapp-pricing-data';
+import type { MessageContent } from './content';
 
 export type { Category, Currency, LocalizedText, RateCard, RuleSet, TemplateCategory };
 
@@ -38,6 +39,12 @@ export interface SimMessage {
   contentType?: ContentType;
   templateName?: string;
   bodyPreview?: string;
+  /**
+   * Structured content, when the message came through the Cloud API or a scenario that
+   * declares it. The phone frame renders this; pricing ignores it entirely. When absent,
+   * `bodyPreview` is rendered as a plain bubble.
+   */
+  content?: MessageContent;
 }
 
 /** Window state at the instant a message was sent — the "why" behind most decisions. */

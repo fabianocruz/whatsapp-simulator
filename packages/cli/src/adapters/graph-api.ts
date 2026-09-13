@@ -1,4 +1,11 @@
-import type { ContentType, SimMessage } from '@dyvit/whatsapp-pricing';
+import type {
+  ContentType,
+  MessageButton,
+  MessageContent,
+  MessageHeader,
+  ListSection,
+  SimMessage,
+} from '@dyvit/whatsapp-pricing';
 
 /**
  * Translates Cloud API wire shapes into the simulator's SimMessage, and back into the
@@ -19,6 +26,17 @@ export interface GraphSendRequest {
     language?: { code?: string };
     /** Meta does not echo the category on send; the emulator accepts it as a hint. */
     category?: string;
+    components?: Array<{
+      type?: string;
+      sub_type?: string;
+      index?: string;
+      parameters?: Array<{
+        type?: string;
+        text?: string;
+        document?: { filename?: string };
+        payload?: string;
+      }>;
+    }>;
   };
   text?: { body?: string };
   image?: { link?: string; caption?: string };
@@ -27,7 +45,19 @@ export interface GraphSendRequest {
   document?: { link?: string; filename?: string };
   sticker?: { link?: string };
   location?: { name?: string; address?: string };
-  interactive?: { type?: string; body?: { text?: string } };
+  interactive?: {
+    type?: string;
+    header?: { type?: string; text?: string; document?: { filename?: string } };
+    body?: { text?: string };
+    footer?: { text?: string };
+    action?: {
+      buttons?: Array<{ type?: string; reply?: { id?: string; title?: string } }>;
+      button?: string;
+      sections?: Array<{ title?: string; rows?: Array<{ id?: string; title?: string; description?: string }> }>;
+      name?: string;
+      parameters?: { flow_cta?: string; flow_name?: string };
+    };
+  };
   [key: string]: unknown;
 }
 
@@ -80,6 +110,138 @@ function interactiveContentType(type: string | undefined): ContentType {
   }
 }
 
+/**
+ * Builds the structured content the phone frame renders.
+ *
+ * The Cloud API expresses a template's header, body, footer and buttons as a flat
+ * `components` array where position carries meaning, so this is where that shape gets
+ * turned into something a renderer can walk. Anything unrecognized degrades to text
+ * rather than throwing: a simulator that refuses a payload it half-understands is worse
+ * than one that shows the body.
+ */
+function contentOf(request: GraphSendRequest, type: string): MessageContent | undefined {
+  if (type === 'text') {
+    return request.text?.body ? { kind: 'text', body: request.text.body } : undefined;
+  }
+
+  if (['image', 'video', 'audio', 'document', 'sticker'].includes(type)) {
+    const media = type as 'image' | 'video' | 'audio' | 'document' | 'sticker';
+    const caption = request.image?.caption ?? request.video?.caption;
+    return {
+      kind: 'media',
+      media,
+      ...(caption ? { caption } : {}),
+      ...(request.document?.filename ? { filename: request.document.filename } : {}),
+    };
+  }
+
+  if (type === 'location') {
+    return {
+      kind: 'location',
+      ...(request.location?.name ? { name: request.location.name } : {}),
+      ...(request.location?.address ? { address: request.location.address } : {}),
+    };
+  }
+
+  if (type === 'template') {
+    const components = request.template?.components ?? [];
+    const part = (kind: string) => components.find((c) => c.type?.toLowerCase() === kind);
+
+    const headerComponent = part('header');
+    const headerParam = headerComponent?.parameters?.[0];
+    let header: MessageHeader | undefined;
+    if (headerParam) {
+      const paramType = (headerParam.type ?? 'text').toLowerCase();
+      header =
+        paramType === 'text'
+          ? { type: 'text', ...(headerParam.text ? { text: headerParam.text } : {}) }
+          : {
+              type: (paramType === 'image' || paramType === 'video' ? paramType : 'document') as MessageHeader['type'],
+              ...(headerParam.document?.filename ? { filename: headerParam.document.filename } : {}),
+            };
+    }
+
+    const buttons: MessageButton[] = components
+      .filter((c) => c.type?.toLowerCase() === 'button')
+      .map((c) => {
+        const subType = (c.sub_type ?? 'quick_reply').toLowerCase();
+        const label = c.parameters?.[0]?.text ?? c.parameters?.[0]?.payload ?? 'Botão';
+        if (subType === 'url') return { type: 'url' as const, text: label };
+        if (subType === 'copy_code') return { type: 'copy_code' as const, text: label };
+        return { type: 'quick_reply' as const, text: label };
+      });
+
+    return {
+      kind: 'template',
+      ...(request.template?.name ? { name: request.template.name } : {}),
+      ...(header ? { header } : {}),
+      body: part('body')?.parameters?.map((p) => p.text).filter(Boolean).join(' ') || request.template?.name || '',
+      ...(part('footer')?.parameters?.[0]?.text ? { footer: part('footer')!.parameters![0]!.text! } : {}),
+      ...(buttons.length > 0 ? { buttons } : {}),
+    };
+  }
+
+  if (type === 'interactive') {
+    const it = request.interactive;
+    const body = it?.body?.text ?? '';
+    const footer = it?.footer?.text;
+    const headerText = it?.header?.text;
+
+    if (it?.type === 'list') {
+      const sections: ListSection[] = (it.action?.sections ?? []).map((s) => ({
+        ...(s.title ? { title: s.title } : {}),
+        rows: (s.rows ?? []).map((r) => ({
+          id: r.id ?? '',
+          title: r.title ?? '',
+          ...(r.description ? { description: r.description } : {}),
+        })),
+      }));
+      return {
+        kind: 'list',
+        ...(headerText ? { header: headerText } : {}),
+        body,
+        ...(footer ? { footer } : {}),
+        buttonText: it.action?.button ?? 'Ver opções',
+        sections,
+      };
+    }
+
+    if (it?.type === 'flow') {
+      return {
+        kind: 'flow',
+        ...(headerText ? { header: headerText } : {}),
+        body,
+        ...(footer ? { footer } : {}),
+        ctaText: it.action?.parameters?.flow_cta ?? 'Abrir',
+      };
+    }
+
+    if (it?.type === 'cta_url') {
+      return {
+        kind: 'buttons',
+        ...(headerText ? { header: { type: 'text' as const, text: headerText } } : {}),
+        body,
+        ...(footer ? { footer } : {}),
+        buttons: [{ type: 'url', text: it.action?.parameters?.flow_cta ?? 'Abrir link' }],
+      };
+    }
+
+    const buttons: MessageButton[] = (it?.action?.buttons ?? []).map((b) => ({
+      type: 'quick_reply' as const,
+      text: b.reply?.title ?? 'Botão',
+    }));
+    return {
+      kind: 'buttons',
+      ...(headerText ? { header: { type: 'text' as const, text: headerText } } : {}),
+      body,
+      ...(footer ? { footer } : {}),
+      buttons,
+    };
+  }
+
+  return undefined;
+}
+
 function bodyPreviewOf(request: GraphSendRequest): string | undefined {
   return (
     request.text?.body ??
@@ -126,6 +288,7 @@ export function fromGraphSendRequest(
       contentType: 'text',
       ...(request.template?.name ? { templateName: request.template.name } : {}),
       ...(bodyPreviewOf(request) ? { bodyPreview: bodyPreviewOf(request) } : {}),
+      ...(contentOf(request, 'template') ? { content: contentOf(request, 'template')! } : {}),
     };
   }
 
@@ -146,6 +309,7 @@ export function fromGraphSendRequest(
     status: 'sent',
     contentType,
     ...(bodyPreviewOf(request) ? { bodyPreview: bodyPreviewOf(request) } : {}),
+    ...(contentOf(request, type) ? { content: contentOf(request, type)! } : {}),
   };
 }
 
