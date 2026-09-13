@@ -1,6 +1,6 @@
 import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createEmulatorServer } from '../commands/serve';
 
 /**
@@ -215,5 +215,39 @@ describe('local Cloud API emulator', () => {
     ).json()) as any;
     expect(first.messages).toHaveLength(1);
     expect(first.priced.totalMicros).toBe(321_700);
+  });
+});
+
+/**
+ * A busy port is how this command usually fails, and Node's default for it is an
+ * unhandled 'error' event: a stack trace through net.js that says nothing a developer can
+ * act on. These pin the friendly path, because the failure mode is guaranteed to recur.
+ */
+describe('runServe on a port that is taken', () => {
+  it('explains the conflict instead of throwing a stack trace', async () => {
+    const { runServe } = await import('../commands/serve.js');
+
+    const blocker = createEmulatorServer({ port: 0, log: () => {} });
+    await new Promise<void>((resolve) => blocker.listen(0, '127.0.0.1', resolve));
+    const { port } = blocker.address() as AddressInfo;
+
+    let stderr = '';
+    const spy = vi.spyOn(process.stderr, 'write').mockImplementation((chunk) => {
+      stderr += String(chunk);
+      return true;
+    });
+
+    try {
+      const code = await runServe({ port, host: '127.0.0.1', log: () => {} });
+      expect(code).toBe(1);
+      expect(stderr).toContain(`porta ${port}`);
+      // It has to hand over the two things that actually unblock someone.
+      expect(stderr).toContain('lsof');
+      expect(stderr).toContain(`--port ${port + 1}`);
+      expect(stderr).not.toContain('at Server.setupListenHandle');
+    } finally {
+      spy.mockRestore();
+      await new Promise<void>((resolve) => blocker.close(() => resolve()));
+    }
   });
 });

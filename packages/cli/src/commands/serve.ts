@@ -344,9 +344,43 @@ export function createEmulatorServer(options: ServeOptions): Server {
 export async function runServe(options: ServeOptions): Promise<number> {
   const server = createEmulatorServer(options);
   const host = options.host ?? '127.0.0.1';
-  await new Promise<void>((resolve) => server.listen(options.port, host, resolve));
-
   const log = options.log ?? ((line: string) => process.stdout.write(`${line}\n`));
+
+  /**
+   * A busy port is the most common way this command fails, and the least interesting.
+   * Node's default is an unhandled 'error' event and a stack trace through net.js, which
+   * tells a developer nothing they can act on. Say what happened and what to do instead.
+   */
+  try {
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(options.port, host, () => {
+        server.removeListener('error', reject);
+        resolve();
+      });
+    });
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === 'EADDRINUSE') {
+      process.stderr.write(
+        `dyvit-wa-sim: a porta ${options.port} já está em uso em ${host}.\n\n` +
+          `  Provavelmente é um emulador que ficou rodando de antes. Para ver quem está lá:\n` +
+          `    lsof -nP -iTCP:${options.port} -sTCP:LISTEN\n\n` +
+          `  Encerre aquele processo, ou suba em outra porta:\n` +
+          `    dyvit-wa-sim serve --port ${options.port + 1}\n`,
+      );
+      return 1;
+    }
+    if (code === 'EACCES') {
+      process.stderr.write(
+        `dyvit-wa-sim: sem permissão para escutar na porta ${options.port}.\n` +
+          `  Portas abaixo de 1024 exigem privilégio. Use uma porta alta, como --port 4290.\n`,
+      );
+      return 1;
+    }
+    throw error;
+  }
+
   log(`dyvit-wa-sim emulator on http://${host}:${options.port}`);
   log(`  Graph base URL:  http://${host}:${options.port}/v22.0`);
   log(`  webhooks:        ${options.webhookUrl ?? '(not configured; inspect GET /_sim/webhooks)'}`);
