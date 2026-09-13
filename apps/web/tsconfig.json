@@ -6,13 +6,31 @@
     // directory tree — which reaches the parent dyvit.ai project's node_modules and pulls
     // in its whole d3 type surface. React types arrive through the imports themselves, so
     // pinning this to node costs nothing and keeps the app's typecheck hermetic.
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "jsx": "preserve",
     "allowJs": true,
     "incremental": true,
-    "plugins": [{ "name": "next" }],
-    "paths": { "@/*": ["./*"] }
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "next-env.d.ts",
+    ".next-dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

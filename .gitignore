@@ -3,6 +3,8 @@
 node_modules
 dist/
 .next/
+.next-dev/
+.next-build/
 out/
 coverage/
 *.tsbuildinfo
