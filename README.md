@@ -51,19 +51,42 @@ pnpm cli -- price --file meu-cenário.json --per-month 30000 --csv breakdown.csv
 pnpm cli -- scenários
 ```
 
+### Ver seu app rodando no telefone
+
+O loop que a spec chama de gate de release: troque a base URL, mande o que você já manda,
+e veja o mesmo fluxo no telefone com o preço de cada mensagem.
+
+```bash
+pnpm cli -- serve --port 4290          # terminal 1: o emulador
+pnpm dev:web                           # terminal 2: o simulador, em localhost:3000
+node examples/app-cobranca/index.mjs   # terminal 3: uma régua de cobrança de exemplo
+```
+
+No simulador, ligue **Ao vivo** e aponte para `http://127.0.0.1:4290`. As mensagens do app
+aparecem no telefone conforme são enviadas, cada uma com o chip de preço e o motivo.
+
+O app de exemplo é um arquivo só, sem dependências, em
+[`examples/app-cobranca`](./examples/app-cobranca/index.mjs): template fora da janela,
+lista de parcelamento, Flow de confirmação, texto livre e documento. Troque a base URL dele
+pelo seu app quando quiser.
+
+Uma observação sobre a porta: o padrão é **4290**, e não 4190, porque a lista de portas
+bloqueadas do padrão Fetch inclui a 4190. Navegadores e o `fetch` do Node recusam conectar
+nela com `bad port`.
+
 ### Emulador local da Cloud API
 
-Troque a base URL do seu projeto para `http://127.0.0.1:4190/v22.0` e mande os mesmos
+Troque a base URL do seu projeto para `http://127.0.0.1:4290/v22.0` e mande os mesmos
 payloads de sempre. O emulador responde com o mesmo shape da Cloud API, dispara os webhooks
 de status assinados e mostra a decisão de preço de cada mensagem.
 
 ```bash
-pnpm cli -- serve --port 4190 --webhook http://localhost:3000/webhooks/whatsapp --app-secret dev
-curl -X POST http://127.0.0.1:4190/v22.0/109876543210/messages \
+pnpm cli -- serve --port 4290 --webhook http://localhost:3000/webhooks/whatsapp --app-secret dev
+curl -X POST http://127.0.0.1:4290/v22.0/109876543210/messages \
   -H 'content-type: application/json' \
   -d '{"messaging_product":"whatsapp","to":"+5511999999999","type":"template",
        "template":{"name":"promo","category":"marketing"}}'
-curl 'http://127.0.0.1:4190/_sim/state'
+curl 'http://127.0.0.1:4290/_sim/state'
 ```
 
 | Rota | O que faz |

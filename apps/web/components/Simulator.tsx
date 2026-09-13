@@ -21,6 +21,8 @@ import {
   type SimulatorState,
 } from '../lib/scenario-state';
 import { decodeState, encodeState, shareUrl } from '../lib/url-hash';
+import { DEFAULT_EMULATOR_URL, connectLive, type LiveConnection, type LiveStatus } from '../lib/live';
+import { LiveControl } from './LiveControl';
 import { Composer } from './Composer';
 import { Notices } from './Notices';
 import { PhoneFrame } from './PhoneFrame';
@@ -44,6 +46,11 @@ export function Simulator() {
   const [justShared, setJustShared] = useState(false);
   const shareTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Live mode: the conversation comes from a local emulator instead of the composer.
+  const [liveStatus, setLiveStatus] = useState<LiveStatus>('off');
+  const [liveUrl, setLiveUrl] = useState(DEFAULT_EMULATOR_URL);
+  const liveConnection = useRef<LiveConnection | null>(null);
+
   useEffect(() => {
     const fromHash = decodeState(window.location.hash);
     if (fromHash) {
@@ -61,8 +68,10 @@ export function Simulator() {
   }, []);
 
   // Keep the hash in step with the state so a copied URL is always the live scenario.
+  // Paused while attached to the emulator: the conversation belongs to the running app,
+  // and rewriting the URL on every inbound message would fight the browser history.
   useEffect(() => {
-    if (!state) return;
+    if (!state || liveStatus === 'connected') return;
     const encoded = `#s=${encodeState(state)}`;
     if (window.location.hash !== encoded) {
       window.history.replaceState(null, '', encoded);
@@ -71,7 +80,22 @@ export function Simulator() {
 
   useEffect(() => () => {
     if (shareTimer.current) clearTimeout(shareTimer.current);
+    liveConnection.current?.close();
   }, []);
+
+  const toggleLive = useCallback(() => {
+    if (liveConnection.current) {
+      liveConnection.current.close();
+      liveConnection.current = null;
+      return;
+    }
+    liveConnection.current = connectLive(liveUrl, {
+      onStatus: setLiveStatus,
+      onSnapshot: (snapshot) => {
+        setState((current) => (current ? { ...current, messages: snapshot.messages } : current));
+      },
+    });
+  }, [liveUrl]);
 
   const patch = useCallback((change: Partial<SimulatorState>) => {
     setState((current) => (current ? { ...current, ...change } : current));
@@ -217,8 +241,24 @@ export function Simulator() {
             </section>
 
             <div className="space-y-6">
+              <LiveControl
+                dict={dict}
+                status={liveStatus}
+                url={liveUrl}
+                messageCount={state.messages.length}
+                onUrlChange={setLiveUrl}
+                onToggle={toggleLive}
+              />
+
               <div className="grid gap-6 sm:grid-cols-2">
-                <Composer dict={dict} defaultSentAt={nextTimestamp(state.messages)} onAdd={addMessage} />
+                {liveStatus === 'connected' ? (
+                  <div className="rounded-[var(--radius-r-lg)] border border-[color:var(--color-ink-15)] bg-[color:var(--color-ink-04)] p-4">
+                    <h3 className="section-label mb-2">{dict.composer}</h3>
+                    <p className="text-[12px] leading-relaxed text-[color:var(--color-ink-40)]">{dict.liveReadOnly}</p>
+                  </div>
+                ) : (
+                  <Composer dict={dict} defaultSentAt={nextTimestamp(state.messages)} onAdd={addMessage} />
+                )}
                 <Taximeter
                   priced={priced}
                   comparison={analysis.comparison}

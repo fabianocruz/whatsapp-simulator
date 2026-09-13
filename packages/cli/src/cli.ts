@@ -26,7 +26,7 @@ price options
   --locale <pt|en>                  output language (default: pt)
 
 serve options
-  --port <n>                        port to listen on (default: 4190)
+  --port <n>                        port to listen on (default: 4290)
   --host <addr>                     address to bind (default: 127.0.0.1)
   --webhook <url>                   POST status and inbound webhooks here
   --app-secret <secret>             sign webhooks with X-Hub-Signature-256
@@ -122,7 +122,10 @@ export async function main(argv: readonly string[]): Promise<number> {
 
   if (command === 'serve') {
     return runServe({
-      port: parseCount(values.port, '--port') ?? 4190,
+      // 4290, e nao 4190: a lista de portas bloqueadas do padrao Fetch inclui 4190
+      // (ManageSieve), entao navegadores e o fetch do Node recusam conectar nela com
+      // "bad port". Um emulador que nenhum cliente fetch alcanca nao serve para nada.
+      port: parseCount(values.port, '--port') ?? 4290,
       ...(values.host ? { host: values.host } : {}),
       ...(values.webhook ? { webhookUrl: values.webhook } : {}),
       ...(values['app-secret'] ? { appSecret: values['app-secret'] } : {}),

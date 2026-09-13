@@ -32,6 +32,13 @@ interface SessionState {
   messages: SimMessage[];
 }
 
+/** One connected UI. */
+interface Subscriber {
+  response: ServerResponse;
+  /** Conversation key this client is watching, or null for "whichever is active". */
+  key: string | null;
+}
+
 const MAX_BODY_BYTES = 1_000_000;
 
 async function readJsonBody(request: IncomingMessage): Promise<unknown> {
@@ -51,9 +58,24 @@ async function readJsonBody(request: IncomingMessage): Promise<unknown> {
   }
 }
 
+/**
+ * The simulator UI runs on its own port, so every response carries CORS. This is a local
+ * development tool serving the developer their own simulated messages; there is nothing
+ * here that belongs to anyone else.
+ */
+const CORS = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-headers': 'content-type',
+  'access-control-allow-methods': 'GET, POST, OPTIONS',
+};
+
 function json(response: ServerResponse, status: number, body: unknown): void {
   const payload = JSON.stringify(body);
-  response.writeHead(status, { 'content-type': 'application/json', 'content-length': Buffer.byteLength(payload) });
+  response.writeHead(status, {
+    'content-type': 'application/json',
+    'content-length': Buffer.byteLength(payload),
+    ...CORS,
+  });
   response.end(payload);
 }
 
@@ -69,6 +91,7 @@ function json(response: ServerResponse, status: number, body: unknown): void {
  */
 export function createEmulatorServer(options: ServeOptions): Server {
   const sessions = new Map<string, SessionState>();
+  const subscribers = new Set<Subscriber>();
   const dispatcher = new WebhookDispatcher({
     ...(options.webhookUrl ? { url: options.webhookUrl } : {}),
     ...(options.appSecret ? { appSecret: options.appSecret } : {}),
@@ -86,6 +109,27 @@ export function createEmulatorServer(options: ServeOptions): Server {
       sessions.set(key, session);
     }
     return session;
+  }
+
+  /**
+   * Pushes the priced conversation to every connected UI.
+   *
+   * Sent after the message is already in `session.messages` and its status applied, so a
+   * client never renders a message the server is still halfway through recording.
+   */
+  function broadcast(key: string): void {
+    if (subscribers.size === 0) return;
+    const session = sessions.get(key);
+    if (!session) return;
+    const payload = JSON.stringify({ key, messages: session.messages, priced: price(session) });
+    for (const subscriber of subscribers) {
+      if (subscriber.key !== null && subscriber.key !== key) continue;
+      try {
+        subscriber.response.write(`data: ${payload}\n\n`);
+      } catch {
+        // A client that went away is dropped on its own 'close' event; ignore the write.
+      }
+    }
   }
 
   function price(session: SessionState): PricedConversation {
@@ -141,6 +185,7 @@ export function createEmulatorServer(options: ServeOptions): Server {
       }
     }
 
+    broadcast(`${phoneNumberId}:${recipient}`);
     json(response, 200, toGraphSendResponse(message, recipient));
   }
 
@@ -165,6 +210,7 @@ export function createEmulatorServer(options: ServeOptions): Server {
     session.messages.push(message);
 
     const delivery = await dispatcher.dispatch(toInboundWebhook(message, { phoneNumberId, displayPhoneNumber, from }));
+    broadcast(`${phoneNumberId}:${from}`);
     json(response, 200, { ok: true, message, webhook: delivery });
   }
 
@@ -174,8 +220,44 @@ export function createEmulatorServer(options: ServeOptions): Server {
         const url = new URL(request.url ?? '/', `http://${request.headers.host ?? 'localhost'}`);
         const path = url.pathname;
 
+        if (request.method === 'OPTIONS') {
+          response.writeHead(204, CORS).end();
+          return;
+        }
+
+        // GET /_sim/events — server-sent events, one message per conversation change.
+        // SSE rather than a WebSocket because the traffic is one-way and this keeps the
+        // emulator dependency-free.
+        if (request.method === 'GET' && path === '/_sim/events') {
+          const key = url.searchParams.get('key');
+          response.writeHead(200, {
+            'content-type': 'text/event-stream',
+            'cache-control': 'no-cache',
+            connection: 'keep-alive',
+            ...CORS,
+          });
+          const subscriber: Subscriber = { response, key };
+          subscribers.add(subscriber);
+          request.on('close', () => subscribers.delete(subscriber));
+
+          // Replay current state so a UI that connects mid-conversation is not blank.
+          const existing = key ? sessions.get(key) : [...sessions.entries()][0]?.[1];
+          const existingKey = key ?? [...sessions.keys()][0] ?? null;
+          if (existing && existingKey) {
+            response.write(
+              `data: ${JSON.stringify({ key: existingKey, messages: existing.messages, priced: price(existing) })}\n\n`,
+            );
+          } else {
+            response.write(`data: ${JSON.stringify({ key: null, messages: [], priced: null })}\n\n`);
+          }
+          // A comment every 25s keeps proxies and browsers from closing an idle stream.
+          const ping = setInterval(() => response.write(': ping\n\n'), 25_000);
+          request.on('close', () => clearInterval(ping));
+          return;
+        }
+
         if (request.method === 'GET' && path === '/health') {
-          json(response, 200, { ok: true, conversations: sessions.size });
+          json(response, 200, { ok: true, conversations: sessions.size, watchers: subscribers.size });
           return;
         }
 
@@ -236,6 +318,7 @@ export async function runServe(options: ServeOptions): Promise<number> {
   log(`  Graph base URL:  http://${host}:${options.port}/v22.0`);
   log(`  webhooks:        ${options.webhookUrl ?? '(not configured; inspect GET /_sim/webhooks)'}`);
   log(`  priced state:    GET http://${host}:${options.port}/_sim/state`);
+  log(`  live stream:     GET http://${host}:${options.port}/_sim/events`);
   log('  no real messages are sent; the official bill is Meta’s.');
 
   // Resolve only on shutdown so the CLI process stays alive while serving.
