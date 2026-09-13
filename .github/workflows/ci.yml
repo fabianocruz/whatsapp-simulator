@@ -8,19 +8,15 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: whatsapp-simulator
     steps:
       - uses: actions/checkout@v4
+      # No `version:` here on purpose. package.json pins `packageManager`, and passing both
+      # makes pnpm/action-setup fail with "multiple versions specified" before any step runs.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
-          cache-dependency-path: whatsapp-simulator/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm typecheck:web
@@ -32,21 +28,15 @@ jobs:
     # notice. This job diffs the versioned rate card against Meta's live pricing endpoint,
     # so a change is caught when it ships rather than when a user reports a wrong number.
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: whatsapp-simulator
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
-          cache-dependency-path: whatsapp-simulator/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       # Not a date heuristic: this asks Meta what it publishes today and fails if the
       # versioned rate card no longer matches it.
       - run: node scripts/fetch-rate-card.mjs --market BR --currency BRL --check
-      - run: pnpm test -- packages/pricing-data
+      - run: pnpm test packages/pricing-data
