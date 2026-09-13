@@ -251,3 +251,41 @@ describe('runServe on a port that is taken', () => {
     }
   });
 });
+
+/**
+ * Opening the base URL is the first thing anyone does after starting a server, and the
+ * answer used to be a Graph-shaped 404 listing routes that had gone stale. The list now
+ * lives in one place, and these pin both consumers of it.
+ */
+describe('the base URL', () => {
+  it('explains the emulator to a browser', async () => {
+    const base = await start({ port: 0, asOf: '2026-09-01', log: () => {} });
+    const response = await fetch(base, { headers: { accept: 'text/html' } });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/html');
+    const html = await response.text();
+    // The two things someone landing here is actually looking for.
+    expect(html).toContain('/v22.0');
+    expect(html).toContain('localhost:3000');
+    expect(html).toContain('Ao vivo');
+  });
+
+  it('answers a machine with the route list', async () => {
+    const base = await start({ port: 0, asOf: '2026-09-01', log: () => {} });
+    const body = (await (await fetch(base, { headers: { accept: 'application/json' } })).json()) as any;
+    expect(body.name).toBe('dyvit-wa-sim');
+    expect(Object.keys(body.routes)).toContain('GET /_sim/events');
+  });
+
+  it('lists every route it actually serves when one is missed', async () => {
+    const base = await start({ port: 0, asOf: '2026-09-01', log: () => {} });
+    const body = (await (await fetch(`${base}/v22.0/123/media`)).json()) as any;
+
+    // The stale version of this message predated the clock and the event stream, which is
+    // exactly the drift a single source of truth prevents.
+    for (const route of ['POST /_sim/clock', 'GET /_sim/events', 'GET /_sim/state']) {
+      expect(body.error.message).toContain(route);
+    }
+  });
+});

@@ -227,6 +227,61 @@ export function createEmulatorServer(options: ServeOptions): Server {
     json(response, 200, { ok: true, message, webhook: delivery });
   }
 
+  /** The routes this server answers, in one place so `/` and the 404 cannot disagree. */
+  const ROUTES: Array<[string, string]> = [
+    ['POST /v22.0/{phone-number-id}/messages', 'Envio, no mesmo shape da Cloud API'],
+    ['POST /_sim/inbound', 'Simula uma mensagem do cliente (aceita entry_point)'],
+    ['POST /_sim/clock', 'Move o relógio da conversa: {"advance_hours": 26}'],
+    ['GET /_sim/state', 'Timeline precificada até agora'],
+    ['GET /_sim/events', 'Stream SSE da conversa, usado pelo modo Ao vivo'],
+    ['GET /_sim/webhooks', 'Webhooks que foram, ou seriam, entregues'],
+    ['GET /health', 'Status do emulador'],
+  ];
+
+  /**
+   * Opening the base URL in a browser is the first thing anyone does after starting a
+   * server. Answering that with a Graph-shaped 404 is technically consistent and
+   * practically useless, so `/` explains what this is, what it answers, and where the
+   * phone frame lives — which is a different process on a different port, and the single
+   * most likely thing someone is looking for when they land here.
+   */
+  function indexPage(): string {
+    const rows = ROUTES.map(
+      ([route, what]) =>
+        `<tr><td><code>${route}</code></td><td>${what}</td></tr>`,
+    ).join('');
+    return `<!doctype html><meta charset="utf-8"><title>dyvit-wa-sim</title>
+<style>
+ :root{color-scheme:dark}
+ body{background:#0B141A;color:#e9edef;font:15px/1.6 ui-sans-serif,system-ui,sans-serif;margin:0;padding:48px 24px}
+ main{max-width:760px;margin:0 auto}
+ h1{font-size:22px;margin:0 0 4px;letter-spacing:-.02em}
+ p{color:#8696a0;margin:0 0 24px}
+ table{width:100%;border-collapse:collapse;margin:0 0 28px}
+ td{padding:9px 0;border-top:1px solid rgba(255,255,255,.08);vertical-align:top}
+ td:first-child{width:52%;padding-right:16px}
+ code{font:13px ui-monospace,SFMono-Regular,monospace;color:#8FE3C0}
+ .box{border:1px solid rgba(143,227,192,.25);background:rgba(10,110,74,.14);border-radius:10px;padding:14px 16px;margin:0 0 24px}
+ .box b{color:#8FE3C0;font-weight:600}
+ small{color:#667781;display:block;margin-top:28px;font-size:13px}
+</style>
+<main>
+ <h1>dyvit-wa-sim</h1>
+ <p>Emulador local da WhatsApp Cloud API, com preço por mensagem.</p>
+ <div class="box">
+  <b>Aponte seu app para</b> <code>http://${options.host ?? '127.0.0.1'}:${options.port}/v22.0</code><br>
+  no lugar de <code>https://graph.facebook.com/v22.0</code>. O resto do seu código não muda.
+ </div>
+ <div class="box">
+  <b>Para ver a conversa no telefone</b>, rode <code>pnpm dev:web</code> e abra
+  <code>http://localhost:3000</code>. Lá, ligue <b>Ao vivo</b> apontando para este emulador.
+  O simulador é outro processo, noutra porta.
+ </div>
+ <table>${rows}</table>
+ <small>Nenhuma mensagem real é enviada. A cobrança oficial é a da Meta.</small>
+</main>`;
+  }
+
   return createServer((request, response) => {
     void (async () => {
       try {
@@ -266,6 +321,22 @@ export function createEmulatorServer(options: ServeOptions): Server {
           // A comment every 25s keeps proxies and browsers from closing an idle stream.
           const ping = setInterval(() => response.write(': ping\n\n'), 25_000);
           request.on('close', () => clearInterval(ping));
+          return;
+        }
+
+        // GET / — a página que explica o emulador, para quem abriu a URL no navegador.
+        if (request.method === 'GET' && (path === '/' || path === '/index.html')) {
+          if ((request.headers.accept ?? '').includes('text/html')) {
+            const html = indexPage();
+            response.writeHead(200, {
+              'content-type': 'text/html; charset=utf-8',
+              'content-length': Buffer.byteLength(html),
+              ...CORS,
+            });
+            response.end(html);
+            return;
+          }
+          json(response, 200, { name: 'dyvit-wa-sim', routes: Object.fromEntries(ROUTES) });
           return;
         }
 
@@ -325,7 +396,10 @@ export function createEmulatorServer(options: ServeOptions): Server {
 
         json(response, 404, {
           error: {
-            message: `unsupported route ${request.method} ${path}. The emulator serves POST /v22.0/{phone-number-id}/messages, POST /_sim/inbound, GET /_sim/state, GET /_sim/webhooks and GET /health.`,
+            message:
+              `unsupported route ${request.method} ${path}. ` +
+              `The emulator serves: ${ROUTES.map(([route]) => route).join(', ')}. ` +
+              `Open / in a browser for the full reference.`,
             type: 'GraphMethodException',
             code: 100,
           },
