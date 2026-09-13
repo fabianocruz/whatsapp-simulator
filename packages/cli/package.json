@@ -19,15 +19,16 @@
   ],
   "scripts": {
     "dev": "tsx src/cli.ts",
-    "build": "tsup src/cli.ts --format esm --clean --out-dir dist --banner.js=\"#!/usr/bin/env node\""
-  },
-  "dependencies": {
-    "@dyvit/whatsapp-pricing": "workspace:*",
-    "@dyvit/whatsapp-scenarios": "workspace:*",
-    "@dyvit/whatsapp-tips": "workspace:*"
+    "build": "tsup"
   },
   "devDependencies": {
+    "@dyvit/whatsapp-pricing": "workspace:*",
+    "@dyvit/whatsapp-scenarios": "workspace:*",
+    "@dyvit/whatsapp-tips": "workspace:*",
     "tsup": "^8.3.5",
     "tsx": "^4.19.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

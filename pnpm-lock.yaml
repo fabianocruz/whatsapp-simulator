@@ -20,6 +20,9 @@ importers:
       pngjs:
         specifier: ^7.0.0
         version: 7.0.0
+      tsup:
+        specifier: ^8.3.5
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.28)(tsx@4.23.13)(typescript@5.9.3)
       typescript:
         specifier: ^5.7.2
         version: 5.9.3

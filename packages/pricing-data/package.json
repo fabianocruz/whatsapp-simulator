@@ -18,10 +18,25 @@
     "./data/*": "./data/*"
   },
   "files": [
-    "src",
+    "dist",
     "data"
   ],
   "scripts": {
-    "check": "vitest run --root ../.. packages/pricing-data"
+    "check": "vitest run --root ../.. packages/pricing-data",
+    "build": "tsup"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+      },
+      "./data/*": "./data/*"
+    }
   }
 }

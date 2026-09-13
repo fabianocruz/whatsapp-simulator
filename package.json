@@ -22,13 +22,15 @@
     "dev:web": "pnpm --filter @dyvit/whatsapp-simulator-web run dev",
     "build:web": "pnpm --filter @dyvit/whatsapp-simulator-web run build",
     "cli": "pnpm --filter @dyvit/whatsapp-simulator-cli run dev",
-    "typecheck:web": "tsc -p apps/web/tsconfig.json"
+    "typecheck:web": "tsc -p apps/web/tsconfig.json",
+    "build:packages": "pnpm --filter \"./packages/**\" run build"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
     "gifenc": "^1.0.3",
     "playwright-core": "^1.63.0",
     "pngjs": "^7.0.0",
+    "tsup": "^8.3.5",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   }
