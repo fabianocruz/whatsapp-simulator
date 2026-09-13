@@ -65,7 +65,7 @@ importers:
         version: 4.3.3
 
   packages/cli:
-    dependencies:
+    devDependencies:
       '@dyvit/whatsapp-pricing':
         specifier: workspace:*
         version: link:../pricing-engine
@@ -75,7 +75,6 @@ importers:
       '@dyvit/whatsapp-tips':
         specifier: workspace:*
         version: link:../tips-engine
-    devDependencies:
       tsup:
         specifier: ^8.3.5
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.28)(tsx@4.23.13)(typescript@5.9.3)
