@@ -1,5 +1,9 @@
 # WhatsApp Messaging Simulator
 
+[![CI](https://github.com/fabianocruz/whatsapp-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/fabianocruz/whatsapp-simulator/actions/workflows/ci.yml)
+[![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-0A6E4A)](./LICENSE)
+[![Rate card](https://img.shields.io/badge/rate%20card%20BR-conferido%20em%2012%2F09%2F2026-0A6E4A)](./packages/pricing-data/data/rate-cards/br-BRL/2026-07-01.json)
+
 **Monte a conversa. Veja o custo. Pague menos.**
 
 Ambiente de desenvolvimento *cost-aware* para a WhatsApp Business Platform: você monta uma
