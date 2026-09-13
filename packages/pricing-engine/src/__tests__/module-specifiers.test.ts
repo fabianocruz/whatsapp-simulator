@@ -4,11 +4,21 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
-const SKIP_DIRS = new Set(['node_modules', '.next', 'dist', 'out', '.git']);
+const SKIP_DIRS = new Set(['node_modules', 'dist', 'out', '.git']);
+
+/**
+ * Generated and vendored trees. Next writes its own type files with `.js` specifiers, and
+ * the prefix match covers `.next`, `.next-dev` and `.next-build` at once: an exact list
+ * silently stopped skipping the day the dev output moved to its own folder, and this test
+ * started failing on code nobody wrote.
+ */
+function isSkipped(name: string): boolean {
+  return SKIP_DIRS.has(name) || name.startsWith('.next');
+}
 
 function sourceFiles(dir: string, found: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
-    if (SKIP_DIRS.has(entry)) continue;
+    if (isSkipped(entry)) continue;
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) sourceFiles(full, found);
     else if (/\.tsx?$/.test(entry)) found.push(full);
