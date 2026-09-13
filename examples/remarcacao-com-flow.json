@@ -1,0 +1,68 @@
+{
+  "name": "Remarcação com Flow",
+  "description": "A mesma jornada resolvida em um Flow: uma mensagem coleta tudo, e a resposta do Flow volta como mensagem do cliente.",
+  "market": "BR",
+  "currency": "BRL",
+  "asOf": "2026-09-01",
+  "messages": [
+    {
+      "id": "m1",
+      "direction": "user_to_business",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T14:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Preciso remarcar minha entrega",
+      "content": {
+        "kind": "text",
+        "body": "Preciso remarcar minha entrega"
+      }
+    },
+    {
+      "id": "m2",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "flow",
+      "sentAt": "2026-09-01T14:02:00.000Z",
+      "status": "read",
+      "bodyPreview": "Remarcar entrega",
+      "content": {
+        "kind": "flow",
+        "header": "Remarcar entrega",
+        "body": "Me diz o pedido, a nova data e o período. Confirmo na hora.",
+        "footer": "Leva menos de 1 minuto",
+        "ctaText": "Remarcar"
+      }
+    },
+    {
+      "id": "m3",
+      "direction": "user_to_business",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "flow",
+      "sentAt": "2026-09-01T14:05:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Pedido 4812 · 18/09 · tarde · mesmo endereço",
+      "content": {
+        "kind": "text",
+        "body": "Pedido 4812 · 18/09 · tarde · mesmo endereço"
+      }
+    },
+    {
+      "id": "m4",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T14:06:00.000Z",
+      "status": "read",
+      "bodyPreview": "Pronto! Entrega remarcada para 18/09 à tarde.",
+      "content": {
+        "kind": "text",
+        "body": "Pronto! Entrega remarcada para 18/09 à tarde."
+      }
+    }
+  ]
+}

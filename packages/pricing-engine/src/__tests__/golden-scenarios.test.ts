@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getScenario } from '@dyvit/whatsapp-scenarios';
 import { compareRulesets, priceConversation } from '../price-conversation';
-import { projectMonthly } from '../projection';
+import { projectMonthly, volumeFromConversation } from '../projection';
 
 const CURRENT_AS_OF = '2026-09-01';
 const FUTURE_AS_OF = '2026-10-01';
@@ -162,5 +162,64 @@ describe('other shipped scenarios', () => {
     const failed = priced.byMessageId.m13!;
     expect(failed.billable).toBe(false);
     expect(failed.reasonCode).toBe('NOT_BILLABLE_FAILED');
+  });
+});
+
+/**
+ * O par que mede quanto um Flow economiza.
+ *
+ * A mesma jornada de remarcação, com o mesmo desfecho para o cliente, resolvida de duas
+ * formas: pergunta a pergunta, e num Flow só. É uma afirmação que o projeto faz em
+ * público, sobre dinheiro de terceiros, então fica presa aqui.
+ *
+ * O ponto que o número sozinho não conta: hoje as duas custam exatamente zero. Flow não
+ * é otimização de custo agora, e vira uma em 01/10/2026.
+ */
+describe('Flow contra a jornada pergunta a pergunta', () => {
+  const semFlow = getScenario('remarcacao-sem-flow');
+  const comFlow = getScenario('remarcacao-com-flow');
+
+  it('hoje não faz diferença nenhuma: as duas são grátis', () => {
+    for (const scenario of [semFlow, comFlow]) {
+      const priced = priceConversation(scenario.messages, { asOf: CURRENT_AS_OF });
+      expect(priced.totalMicros, scenario.slug).toBe(0);
+      expect(priced.billableCount, scenario.slug).toBe(0);
+    }
+  });
+
+  it('em 01/10/2026 o Flow custa um terço', () => {
+    const sem = priceConversation(semFlow.messages, { asOf: FUTURE_AS_OF });
+    const com = priceConversation(comFlow.messages, { asOf: FUTURE_AS_OF });
+
+    // Seis mensagens de service contra duas: cinco perguntas mais a confirmação, contra o
+    // Flow mais a confirmação.
+    expect(sem.billableCount).toBe(6);
+    expect(com.billableCount).toBe(2);
+    expect(sem.totalMicros).toBe(6 * 35_000);
+    expect(com.totalMicros).toBe(2 * 35_000);
+    expect(com.totalMicros / sem.totalMicros).toBeCloseTo(1 / 3, 10);
+  });
+
+  it('a resposta do Flow não é cobrada, porque vem do cliente', () => {
+    const com = priceConversation(comFlow.messages, { asOf: FUTURE_AS_OF });
+    const resposta = com.decisions.find((d) => d.messageId === 'm3')!;
+    expect(resposta.reasonCode).toBe('FREE_INBOUND');
+    expect(resposta.billable).toBe(false);
+  });
+
+  it('a diferença aparece na projeção mensal, com a franquia aplicada', () => {
+    const sem = projectMonthly(
+      volumeFromConversation(priceConversation(semFlow.messages, { asOf: FUTURE_AS_OF }), 50_000),
+      { asOf: FUTURE_AS_OF },
+    );
+    const com = projectMonthly(
+      volumeFromConversation(priceConversation(comFlow.messages, { asOf: FUTURE_AS_OF }), 50_000),
+      { asOf: FUTURE_AS_OF },
+    );
+
+    // 300.000 contra 100.000 mensagens de service, menos as 1.000 da franquia em cada.
+    expect(sem.total).toBe(10_465);
+    expect(com.total).toBe(3_465);
+    expect(sem.total - com.total).toBe(7_000);
   });
 });

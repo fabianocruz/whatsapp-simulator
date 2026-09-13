@@ -7,6 +7,8 @@ import fepClickToWhatsapp from '../../../examples/fep-click-to-whatsapp.json';
 import otpAuthentication from '../../../examples/otp-authentication.json';
 import suporteLongo from '../../../examples/suporte-longo.json';
 import negociacaoRica from '../../../examples/negociacao-rica.json';
+import remarcacaoComFlow from '../../../examples/remarcacao-com-flow.json';
+import remarcacaoSemFlow from '../../../examples/remarcacao-sem-flow.json';
 import workedExample from '../../../examples/worked-example-spec.json';
 
 export interface Scenario {
@@ -32,6 +34,8 @@ export const SCENARIOS: readonly Scenario[] = Object.freeze([
   scenario('suporte-longo', suporteLongo),
   scenario('otp-authentication', otpAuthentication),
   scenario('negociacao-rica', negociacaoRica),
+  scenario('remarcacao-sem-flow', remarcacaoSemFlow),
+  scenario('remarcacao-com-flow', remarcacaoComFlow),
 ]);
 
 export function getScenario(slug: string): Scenario {

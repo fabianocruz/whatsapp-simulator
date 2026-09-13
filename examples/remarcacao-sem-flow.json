@@ -1,0 +1,177 @@
+{
+  "name": "Remarcação sem Flow",
+  "description": "A mesma jornada de remarcação de entrega coletando dado a dado, uma pergunta por mensagem. Par de comparação do cenário com Flow.",
+  "market": "BR",
+  "currency": "BRL",
+  "asOf": "2026-09-01",
+  "messages": [
+    {
+      "id": "m1",
+      "direction": "user_to_business",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T14:00:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Preciso remarcar minha entrega",
+      "content": {
+        "kind": "text",
+        "body": "Preciso remarcar minha entrega"
+      }
+    },
+    {
+      "id": "m2",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T14:02:00.000Z",
+      "status": "read",
+      "bodyPreview": "Claro! Qual o número do pedido?",
+      "content": {
+        "kind": "text",
+        "body": "Claro! Qual o número do pedido?"
+      }
+    },
+    {
+      "id": "m3",
+      "direction": "user_to_business",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T14:03:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "4812",
+      "content": {
+        "kind": "text",
+        "body": "4812"
+      }
+    },
+    {
+      "id": "m4",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T14:05:00.000Z",
+      "status": "read",
+      "bodyPreview": "Para qual data você quer remarcar?",
+      "content": {
+        "kind": "text",
+        "body": "Para qual data você quer remarcar?"
+      }
+    },
+    {
+      "id": "m5",
+      "direction": "user_to_business",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T14:06:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Dia 18",
+      "content": {
+        "kind": "text",
+        "body": "Dia 18"
+      }
+    },
+    {
+      "id": "m6",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T14:08:00.000Z",
+      "status": "read",
+      "bodyPreview": "Prefere manhã ou tarde?",
+      "content": {
+        "kind": "text",
+        "body": "Prefere manhã ou tarde?"
+      }
+    },
+    {
+      "id": "m7",
+      "direction": "user_to_business",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T14:09:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Tarde",
+      "content": {
+        "kind": "text",
+        "body": "Tarde"
+      }
+    },
+    {
+      "id": "m8",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T14:11:00.000Z",
+      "status": "read",
+      "bodyPreview": "O endereço continua o mesmo?",
+      "content": {
+        "kind": "text",
+        "body": "O endereço continua o mesmo?"
+      }
+    },
+    {
+      "id": "m9",
+      "direction": "user_to_business",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T14:12:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Sim",
+      "content": {
+        "kind": "text",
+        "body": "Sim"
+      }
+    },
+    {
+      "id": "m10",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T14:14:00.000Z",
+      "status": "read",
+      "bodyPreview": "Confirma: pedido 4812, dia 18 à tarde, mesmo endereço?",
+      "content": {
+        "kind": "text",
+        "body": "Confirma: pedido 4812, dia 18 à tarde, mesmo endereço?"
+      }
+    },
+    {
+      "id": "m11",
+      "direction": "user_to_business",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T14:15:00.000Z",
+      "status": "delivered",
+      "bodyPreview": "Confirmo",
+      "content": {
+        "kind": "text",
+        "body": "Confirmo"
+      }
+    },
+    {
+      "id": "m12",
+      "direction": "business_to_user",
+      "kind": "non_template",
+      "category": "service",
+      "contentType": "text",
+      "sentAt": "2026-09-01T14:17:00.000Z",
+      "status": "read",
+      "bodyPreview": "Pronto! Entrega remarcada para 18/09 à tarde.",
+      "content": {
+        "kind": "text",
+        "body": "Pronto! Entrega remarcada para 18/09 à tarde."
+      }
+    }
+  ]
+}
