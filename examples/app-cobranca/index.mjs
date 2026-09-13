@@ -34,6 +34,23 @@ const DELAY = Number(values.delay);
 
 const pausa = (ms = DELAY) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * Move o relógio da conversa no emulador.
+ *
+ * Uma régua de cobrança acontece ao longo de dias, mas este script roda em segundos. Sem
+ * isso, tudo cairia no mesmo minuto e a janela de 24h nunca fecharia, que é justamente o
+ * que decide o preço. O seu app não precisa disso: ele manda o que já manda, e quem
+ * controla o tempo é o emulador.
+ */
+async function avancarRelogio(horas) {
+  await fetch(`${SIM}/_sim/clock`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ advance_hours: horas }),
+  });
+  console.log(`  ⏱  +${horas}h`);
+}
+
 async function enviar(payload, rotulo) {
   const response = await fetch(`${BASE}/${PHONE_NUMBER_ID}/messages`, {
     method: 'POST',
@@ -90,7 +107,9 @@ async function main() {
   );
   await pausa();
 
-  // A resposta do cliente abre a janela de 24h: daqui em diante sai texto livre.
+  // O cliente lê e responde 40 minutos depois. Isso abre a janela de 24h, e daqui em
+  // diante sai texto livre.
+  await avancarRelogio(0.7);
   await clienteResponde('Quero resolver');
   await pausa(900);
 
@@ -121,6 +140,7 @@ async function main() {
   );
   await pausa();
 
+  await avancarRelogio(0.3);
   await clienteResponde('3x');
   await pausa(900);
 
@@ -138,6 +158,7 @@ async function main() {
   );
   await pausa();
 
+  await avancarRelogio(0.4);
   await clienteResponde('Confirmado');
   await pausa(900);
 
@@ -150,7 +171,9 @@ async function main() {
   );
   await pausa();
 
-  // Dois dias depois: a janela já fechou, então volta a exigir template.
+  // Dois dias depois: a janela de 24h já fechou, então volta a exigir template, e ele
+  // volta a ser cobrado.
+  await avancarRelogio(48);
   await enviar(
     {
       type: 'template',

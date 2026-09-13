@@ -70,6 +70,17 @@ O app de exemplo é um arquivo só, sem dependências, em
 lista de parcelamento, Flow de confirmação, texto livre e documento. Troque a base URL dele
 pelo seu app quando quiser.
 
+O emulador tem um relógio próprio, e isso importa: uma régua de cobrança acontece ao longo
+de dias, mas o script roda em segundos. Sem avançar o relógio, tudo cai no mesmo minuto e a
+janela de 24h nunca fecha, que é justamente o que decide o preço.
+
+```bash
+curl -X POST http://127.0.0.1:4290/_sim/clock \
+  -H 'content-type: application/json' -d '{"advance_hours": 26}'
+```
+
+Quem controla o tempo é o emulador, não o seu app: ele continua mandando o que já manda.
+
 Uma observação sobre a porta: o padrão é **4290**, e não 4190, porque a lista de portas
 bloqueadas do padrão Fetch inclui a 4190. Navegadores e o `fetch` do Node recusam conectar
 nela com `bad port`.

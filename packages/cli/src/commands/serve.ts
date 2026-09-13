@@ -96,7 +96,20 @@ export function createEmulatorServer(options: ServeOptions): Server {
     ...(options.webhookUrl ? { url: options.webhookUrl } : {}),
     ...(options.appSecret ? { appSecret: options.appSecret } : {}),
   });
-  const now = options.now ?? (() => new Date());
+  /**
+   * The conversation clock.
+   *
+   * Real time is the wrong clock for this tool: a collections flow spans days, and an
+   * application replaying it against the emulator finishes in seconds, so every message
+   * lands in the same minute and the 24h window — the thing the whole product is about —
+   * never closes. `POST /_sim/clock` moves it.
+   *
+   * It lives in the emulator rather than in a per-message field on purpose: the promise is
+   * that you point your existing app at localhost without touching its payloads.
+   */
+  const wallClock = options.now ?? (() => new Date());
+  let clockOffsetMs = 0;
+  const now = () => new Date(wallClock().getTime() + clockOffsetMs);
   const log = options.log ?? ((line: string) => process.stdout.write(`${line}\n`));
   const market = options.market ?? 'BR';
   const currency = options.currency ?? 'BRL';
@@ -278,6 +291,26 @@ export function createEmulatorServer(options: ServeOptions): Server {
           return;
         }
 
+        // POST /_sim/clock — advance or pin the conversation clock.
+        //   { "advance_hours": 26 }        moves it forward
+        //   { "now": "2026-09-02T16:00Z" } pins it
+        if (request.method === 'POST' && path === '/_sim/clock') {
+          const body = (await readJsonBody(request)) as { advance_hours?: number; advance_minutes?: number; now?: string };
+          if (typeof body.now === 'string') {
+            const pinned = Date.parse(body.now);
+            if (Number.isNaN(pinned)) throw new GraphApiError(`"now" is not a valid timestamp: ${body.now}`, 400);
+            clockOffsetMs = pinned - wallClock().getTime();
+          }
+          const hours = Number(body.advance_hours ?? 0);
+          const minutes = Number(body.advance_minutes ?? 0);
+          if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+            throw new GraphApiError('advance_hours and advance_minutes must be numbers', 400);
+          }
+          clockOffsetMs += hours * 3_600_000 + minutes * 60_000;
+          json(response, 200, { now: now().toISOString(), offsetMinutes: Math.round(clockOffsetMs / 60_000) });
+          return;
+        }
+
         if (request.method === 'POST' && path === '/_sim/inbound') {
           await handleSimulateInbound(response, (await readJsonBody(request)) as Record<string, unknown>);
           return;
@@ -319,6 +352,7 @@ export async function runServe(options: ServeOptions): Promise<number> {
   log(`  webhooks:        ${options.webhookUrl ?? '(not configured; inspect GET /_sim/webhooks)'}`);
   log(`  priced state:    GET http://${host}:${options.port}/_sim/state`);
   log(`  live stream:     GET http://${host}:${options.port}/_sim/events`);
+  log(`  conversation clock: POST http://${host}:${options.port}/_sim/clock  {"advance_hours": 26}`);
   log('  no real messages are sent; the official bill is Meta’s.');
 
   // Resolve only on shutdown so the CLI process stays alive while serving.
