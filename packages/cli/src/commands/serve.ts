@@ -69,6 +69,26 @@ const CORS = {
   'access-control-allow-methods': 'GET, POST, OPTIONS',
 };
 
+/**
+ * The conversation a message belongs to.
+ *
+ * Only the digits, on both sides. The Cloud API documents `to` without a `+` and Meta's
+ * inbound `from` arrives without one, but a developer who sends `+5511…` is writing to the
+ * same person — and keying on the literal string made that two conversations: the
+ * customer's messages opened the window on one, and the business's sends were priced
+ * against the other, which had no customer in it at all. The pricing is the whole point of
+ * the tool, so one person has to be one key.
+ */
+function conversationKey(phoneNumberId: string, number: string): string {
+  return `${phoneNumberId}:${number.replace(/\D/g, '')}`;
+}
+
+/** The same normalisation for a key a client asks for, so an older URL still finds it. */
+function normalizeKey(raw: string): string {
+  const cut = raw.indexOf(':');
+  return cut < 0 ? raw : conversationKey(raw.slice(0, cut), raw.slice(cut + 1));
+}
+
 function json(response: ServerResponse, status: number, body: unknown): void {
   const payload = JSON.stringify(body);
   response.writeHead(status, {
@@ -191,7 +211,7 @@ export function createEmulatorServer(options: ServeOptions): Server {
     body: GraphSendRequest,
   ): Promise<void> {
     const recipient = body.to ?? 'unknown';
-    const key = `${phoneNumberId}:${recipient}`;
+    const key = conversationKey(phoneNumberId, recipient);
     const sentAt = now().toISOString();
     const id = `wamid.sim.${randomUUID()}`;
 
@@ -235,7 +255,7 @@ export function createEmulatorServer(options: ServeOptions): Server {
       }
     }
 
-    broadcast(`${phoneNumberId}:${recipient}`);
+    broadcast(key);
     json(response, 200, toGraphSendResponse(message, recipient));
   }
 
@@ -245,7 +265,8 @@ export function createEmulatorServer(options: ServeOptions): Server {
   ): Promise<void> {
     const phoneNumberId = String(body.phone_number_id ?? 'sim-phone-number');
     const from = String(body.from ?? '+5511999999999');
-    const session = sessionFor(`${phoneNumberId}:${from}`);
+    const key = conversationKey(phoneNumberId, from);
+    const session = sessionFor(key);
     const message: SimMessage = {
       id: `wamid.sim.${randomUUID()}`,
       direction: 'user_to_business',
@@ -260,7 +281,7 @@ export function createEmulatorServer(options: ServeOptions): Server {
     session.messages.push(message);
 
     const delivery = await dispatcher.dispatch(toInboundWebhook(message, { phoneNumberId, displayPhoneNumber, from }));
-    broadcast(`${phoneNumberId}:${from}`);
+    broadcast(key);
     json(response, 200, { ok: true, message, webhook: delivery });
   }
 
@@ -357,7 +378,8 @@ export function createEmulatorServer(options: ServeOptions): Server {
         // SSE rather than a WebSocket because the traffic is one-way and this keeps the
         // emulator dependency-free.
         if (request.method === 'GET' && path === '/_sim/events') {
-          const key = url.searchParams.get('key');
+          const asked = url.searchParams.get('key');
+          const key = asked === null ? null : normalizeKey(asked);
           response.writeHead(200, {
             'content-type': 'text/event-stream',
             'cache-control': 'no-cache',
@@ -408,7 +430,7 @@ export function createEmulatorServer(options: ServeOptions): Server {
         // GET /_sim/state?key=<phoneNumberId>:<recipient> — the priced timeline so far.
         if (request.method === 'GET' && path === '/_sim/state') {
           const key = url.searchParams.get('key');
-          const session = key ? sessions.get(key) : [...sessions.values()][0];
+          const session = key ? sessions.get(normalizeKey(key)) : [...sessions.values()][0];
           if (!session) {
             json(response, 404, { error: 'no conversation yet', keys: [...sessions.keys()] });
             return;

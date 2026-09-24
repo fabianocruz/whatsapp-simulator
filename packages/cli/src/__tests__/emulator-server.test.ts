@@ -362,6 +362,39 @@ describe('local Cloud API emulator', () => {
     });
   });
 
+  it('is one conversation whether or not the number carries a +', async () => {
+    const time = clock('2026-09-01T10:00:00.000Z');
+    const base = await start({ port: 0, asOf: '2026-09-01', now: time.now, log: () => {} });
+
+    // The inbound arrives the way Meta sends it, without a +.
+    await post(base, '/_sim/inbound', {
+      phone_number_id: PHONE_NUMBER_ID,
+      from: '5511987654321',
+      text: 'Pode mandar o acordo',
+      sent_at: time.now().toISOString(),
+    });
+
+    // The send goes out the way a developer writes it, with one. Same person, so the
+    // window the customer opened is the window this send is inside: a 200 here is the
+    // proof the two did not become two conversations.
+    time.advanceHours(1);
+    const send = await post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {
+      messaging_product: 'whatsapp',
+      to: '+5511987654321',
+      type: 'text',
+      text: { body: 'Segue o acordo.' },
+    });
+    expect(send.status).toBe(200);
+
+    expect(((await (await fetch(`${base}/health`)).json()) as any).conversations).toBe(1);
+    for (const asked of ['5511987654321', '+5511987654321']) {
+      const state = (await (
+        await fetch(`${base}/_sim/state?key=${PHONE_NUMBER_ID}:${encodeURIComponent(asked)}`)
+      ).json()) as any;
+      expect(state.messages).toHaveLength(2);
+    }
+  });
+
   it('returns a Graph-shaped error for a template category it cannot price', async () => {
     const base = await start({ port: 0, asOf: '2026-09-01', log: () => {} });
     const response = await post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {
