@@ -5,6 +5,8 @@ export interface WebhookDelivery {
   status: number | null;
   error: string | null;
   body: unknown;
+  /** Index of the delivery this one repeats, when it came from `redeliver`. */
+  replayOf?: number;
 }
 
 export interface WebhookDispatcherOptions {
@@ -41,10 +43,25 @@ export class WebhookDispatcher {
     return `sha256=${createHmac('sha256', this.options.appSecret).update(rawBody, 'utf8').digest('hex')}`;
   }
 
-  async dispatch(payload: unknown): Promise<WebhookDelivery> {
+  /**
+   * Sends a delivery again, exactly as it was recorded.
+   *
+   * A webhook arriving twice, or arriving before the event that should precede it, is
+   * ordinary on WhatsApp and is what a receiver's idempotency is for. Without this the
+   * emulator can only ever produce the happy order, so the handling of the unhappy one is
+   * the part of an app that never gets exercised.
+   */
+  async redeliver(index: number, meta: { replayOf?: number } = {}): Promise<WebhookDelivery> {
+    const original = this.log[index];
+    if (!original) throw new RangeError(`no webhook delivery at index ${index}`);
+    return this.dispatch(original.body, { replayOf: meta.replayOf ?? index });
+  }
+
+  async dispatch(payload: unknown, meta: { replayOf?: number } = {}): Promise<WebhookDelivery> {
+    const tag = meta.replayOf === undefined ? {} : { replayOf: meta.replayOf };
     const url = this.options.url;
     if (!url) {
-      const delivery: WebhookDelivery = { url: '(not configured)', status: null, error: null, body: payload };
+      const delivery: WebhookDelivery = { url: '(not configured)', status: null, error: null, body: payload, ...tag };
       this.log.push(delivery);
       return delivery;
     }
@@ -65,7 +82,7 @@ export class WebhookDispatcher {
         body: rawBody,
         signal: AbortSignal.timeout(this.options.timeoutMs ?? 5_000),
       });
-      const delivery: WebhookDelivery = { url, status: response.status, error: null, body: payload };
+      const delivery: WebhookDelivery = { url, status: response.status, error: null, body: payload, ...tag };
       this.log.push(delivery);
       return delivery;
     } catch (error) {
@@ -74,6 +91,7 @@ export class WebhookDispatcher {
         status: null,
         error: error instanceof Error ? error.message : String(error),
         body: payload,
+        ...tag,
       };
       this.log.push(delivery);
       return delivery;

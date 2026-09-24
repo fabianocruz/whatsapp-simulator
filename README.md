@@ -122,6 +122,8 @@ depois, e ela só vale como teste se o emulador negar igual.
 | `POST /_sim/inbound` | Simula uma mensagem do cliente (aceita `entry_point`) |
 | `GET /_sim/state` | Timeline precificada até agora |
 | `GET /_sim/webhooks` | Webhooks que foram (ou seriam) entregues |
+| `POST /_sim/webhooks/{índice}/redeliver` | Entrega de novo aquele webhook |
+| `POST /_sim/replay` | Reentrega vários, na ordem pedida: `{"indexes": [2, 1, 1]}` |
 
 ### Usando só o motor de preço
 

@@ -264,6 +264,27 @@ export function createEmulatorServer(options: ServeOptions): Server {
     json(response, 200, { ok: true, message, webhook: delivery });
   }
 
+  /**
+   * Sends a recorded delivery again.
+   *
+   * The index is the position in `GET /_sim/webhooks`, which is the only handle a
+   * developer has on a delivery, so an index that does not exist says how many there are
+   * rather than answering a bare 404.
+   */
+  async function replayDelivery(index: number): Promise<unknown> {
+    const count = dispatcher.deliveries.length;
+    if (!Number.isInteger(index) || index < 0 || index >= count) {
+      throw new GraphApiError(
+        `no webhook delivery at index ${index}; ` +
+          (count === 0
+            ? 'nothing has been delivered yet (GET /_sim/webhooks)'
+            : `there are ${count} (0..${count - 1}), listed by GET /_sim/webhooks`),
+        404,
+      );
+    }
+    return dispatcher.redeliver(index);
+  }
+
   /** The routes this server answers, in one place so `/` and the 404 cannot disagree. */
   const ROUTES: Array<[string, string]> = [
     ['POST /v22.0/{phone-number-id}/messages', 'Envio, no mesmo shape da Cloud API'],
@@ -272,6 +293,8 @@ export function createEmulatorServer(options: ServeOptions): Server {
     ['GET /_sim/state', 'Timeline precificada até agora'],
     ['GET /_sim/events', 'Stream SSE da conversa, usado pelo modo Ao vivo'],
     ['GET /_sim/webhooks', 'Webhooks que foram, ou seriam, entregues'],
+    ['POST /_sim/webhooks/{índice}/redeliver', 'Entrega de novo o webhook daquele índice'],
+    ['POST /_sim/replay', 'Reentrega vários, na ordem pedida: {"indexes": [2, 1, 1]}'],
     ['GET /health', 'Status do emulador'],
   ];
 
@@ -396,6 +419,32 @@ export function createEmulatorServer(options: ServeOptions): Server {
 
         if (request.method === 'GET' && path === '/_sim/webhooks') {
           json(response, 200, { deliveries: dispatcher.deliveries });
+          return;
+        }
+
+        // POST /_sim/webhooks/{index}/redeliver — the same delivery, sent again.
+        const redeliver = /^\/_sim\/webhooks\/(\d+)\/redeliver$/.exec(path);
+        if (request.method === 'POST' && redeliver) {
+          json(response, 200, { delivery: await replayDelivery(Number(redeliver[1])) });
+          return;
+        }
+
+        // POST /_sim/replay {"indexes": [2, 1, 1]} — several deliveries, in the order
+        // given. Repeating an index duplicates the event; listing them out of order
+        // delivers them out of order, which is the pair of cases a receiver has to survive
+        // and the emulator could not produce.
+        if (request.method === 'POST' && path === '/_sim/replay') {
+          const body = (await readJsonBody(request)) as { indexes?: unknown };
+          if (!Array.isArray(body.indexes) || body.indexes.length === 0) {
+            throw new GraphApiError(
+              'replay needs {"indexes": [...]}: the delivery indexes to send again, in the order to ' +
+                'send them. GET /_sim/webhooks lists them.',
+              400,
+            );
+          }
+          const deliveries = [];
+          for (const index of body.indexes) deliveries.push(await replayDelivery(Number(index)));
+          json(response, 200, { deliveries });
           return;
         }
 

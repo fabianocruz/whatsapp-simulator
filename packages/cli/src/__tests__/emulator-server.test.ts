@@ -1,5 +1,5 @@
 import type { AddressInfo } from 'node:net';
-import type { Server } from 'node:http';
+import { createServer, type Server } from 'node:http';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createEmulatorServer } from '../commands/serve';
 
@@ -276,6 +276,89 @@ describe('local Cloud API emulator', () => {
         text: { body: 'Ainda posso ajudar?' },
       });
       expect(later.status).toBe(200);
+    });
+  });
+
+  /**
+   * The same event twice, and an event before the one that should precede it: both are
+   * ordinary on WhatsApp, and both are what a receiver's idempotency is written for. The
+   * emulator could only ever produce the happy order, so that code was never exercised.
+   */
+  describe('redelivering webhooks', () => {
+    /** A developer's own endpoint, so the test sees what it actually received. */
+    async function receiver(): Promise<{ url: string; bodies: any[]; close: () => Promise<void> }> {
+      const bodies: any[] = [];
+      const app = createServer((request, response) => {
+        let raw = '';
+        request.on('data', (chunk) => {
+          raw += chunk;
+        });
+        request.on('end', () => {
+          bodies.push(JSON.parse(raw));
+          response.writeHead(200).end();
+        });
+      });
+      await new Promise<void>((resolve) => app.listen(0, '127.0.0.1', resolve));
+      const { port } = app.address() as AddressInfo;
+      return {
+        url: `http://127.0.0.1:${port}/webhooks`,
+        bodies,
+        close: () => new Promise<void>((resolve) => app.close(() => resolve())),
+      };
+    }
+
+    const statusOf = (body: any) => body.entry[0].changes[0].value.statuses?.[0]?.status;
+
+    it('sends a recorded delivery again, and several in the order asked', async () => {
+      const endpoint = await receiver();
+      try {
+        const base = await start({ port: 0, asOf: '2026-09-01', webhookUrl: endpoint.url, log: () => {} });
+        await post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {
+          messaging_product: 'whatsapp',
+          to: RECIPIENT,
+          type: 'template',
+          template: { name: 'promo', category: 'marketing' },
+        });
+        expect(endpoint.bodies.map(statusOf)).toEqual(['sent', 'delivered']);
+
+        // delivered again, then sent: the duplicate and the inversion in one call.
+        const replay = await post(base, '/_sim/replay', { indexes: [1, 0] });
+        expect(replay.status).toBe(200);
+        expect(endpoint.bodies.map(statusOf)).toEqual(['sent', 'delivered', 'delivered', 'sent']);
+        expect(endpoint.bodies[2]).toEqual(endpoint.bodies[1]);
+
+        const single = await post(base, '/_sim/webhooks/0/redeliver', {});
+        expect(single.status).toBe(200);
+        expect(endpoint.bodies.map(statusOf)).toEqual(['sent', 'delivered', 'delivered', 'sent', 'sent']);
+
+        // The log says which delivery each replay repeats, so a reader can tell a replay
+        // from a message that really was sent twice.
+        const { deliveries } = (await (await fetch(`${base}/_sim/webhooks`)).json()) as any;
+        expect(deliveries.map((d: any) => d.replayOf)).toEqual([undefined, undefined, 1, 0, 0]);
+      } finally {
+        await endpoint.close();
+      }
+    });
+
+    it('says how many deliveries there are when the index does not exist', async () => {
+      const base = await start({ port: 0, asOf: '2026-09-01', log: () => {} });
+      const empty = await post(base, '/_sim/webhooks/0/redeliver', {});
+      expect(empty.status).toBe(404);
+      expect(((await empty.json()) as any).error.message).toContain('nothing has been delivered yet');
+
+      await post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {
+        messaging_product: 'whatsapp',
+        to: RECIPIENT,
+        type: 'template',
+        template: { name: 'promo', category: 'marketing' },
+      });
+      const past = await post(base, '/_sim/replay', { indexes: [9] });
+      expect(past.status).toBe(404);
+      expect(((await past.json()) as any).error.message).toContain('there are 2 (0..1)');
+
+      const empb = await post(base, '/_sim/replay', {});
+      expect(empb.status).toBe(400);
+      expect(((await empb.json()) as any).error.message).toContain('indexes');
     });
   });
 
