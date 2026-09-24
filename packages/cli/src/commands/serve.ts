@@ -41,6 +41,9 @@ interface Subscriber {
 
 const MAX_BODY_BYTES = 1_000_000;
 
+/** Every status a message can be moved to from outside, which is Meta's whole set. */
+const STATUSES = new Set<SimMessage['status']>(['sent', 'delivered', 'read', 'failed']);
+
 async function readJsonBody(request: IncomingMessage): Promise<unknown> {
   const chunks: Buffer[] = [];
   let size = 0;
@@ -286,6 +289,99 @@ export function createEmulatorServer(options: ServeOptions): Server {
   }
 
   /**
+   * Finds the message a status is about: the one asked for by id, or the last one the
+   * business sent, which is what a developer means by "mark it read" right after a send.
+   */
+  function findOutbound(
+    keyAsked: string | null,
+    messageId: string | null,
+  ): { key: string; session: SessionState; message: SimMessage } {
+    const entries = [...sessions.entries()].filter(([key]) => keyAsked === null || key === keyAsked);
+    if (entries.length === 0) {
+      throw new GraphApiError(
+        keyAsked ? `no conversation for key ${keyAsked}` : 'no conversation yet; send a message first',
+        404,
+      );
+    }
+    for (const [key, session] of entries) {
+      const message = messageId
+        ? session.messages.find((m) => m.id === messageId)
+        : [...session.messages].reverse().find((m) => m.direction === 'business_to_user');
+      if (message) return { key, session, message };
+    }
+    throw new GraphApiError(
+      messageId
+        ? `no message ${messageId} in ${keyAsked ? `conversation ${keyAsked}` : 'any conversation'}`
+        : 'that conversation has no message from the business yet',
+      404,
+    );
+  }
+
+  /**
+   * Moves a message to a status the emulator will not reach on its own.
+   *
+   * A send walks through `sent` and `delivered` and stops there, because that is the happy
+   * path and it is deterministic. The other two are not decoration: a read receipt is how
+   * an app learns the customer actually saw it, and a failed delivery is an ordinary
+   * WhatsApp outcome — a number that is not on WhatsApp, a block list — which also takes
+   * the message off the bill. Both shapes already existed in `toStatusWebhook`; what was
+   * missing was any way to ask for them.
+   */
+  async function handleStatus(response: ServerResponse, body: Record<string, unknown>): Promise<void> {
+    const status = String(body.status ?? '') as SimMessage['status'];
+    if (!STATUSES.has(status)) {
+      throw new GraphApiError(
+        `unknown status "${String(body.status ?? '')}"; use sent, delivered, read or failed`,
+        400,
+      );
+    }
+
+    const { key, session, message } = findOutbound(
+      body.key === undefined ? null : normalizeKey(String(body.key)),
+      body.message_id === undefined ? null : String(body.message_id),
+    );
+    if (message.direction !== 'business_to_user') {
+      throw new GraphApiError(
+        `${message.id} is a message from the customer, and only what the business sent carries a status`,
+        400,
+      );
+    }
+
+    message.status = status;
+    const cut = key.indexOf(':');
+    const phoneNumberId = key.slice(0, cut);
+    const recipient = key.slice(cut + 1);
+    const decision = price(session).byMessageId[message.id];
+
+    const delivery = await dispatcher.dispatch(
+      toStatusWebhook(message.id, {
+        phoneNumberId,
+        displayPhoneNumber,
+        recipient,
+        status,
+        timestamp: now().toISOString(),
+        ...(decision && status === 'delivered'
+          ? { pricing: { billable: decision.billable, category: decision.category } }
+          : {}),
+        ...(status === 'failed'
+          ? {
+              errors: [
+                {
+                  code: 131_026,
+                  title: 'Message undeliverable',
+                  details: String(body.reason ?? 'the recipient could not receive this message'),
+                },
+              ],
+            }
+          : {}),
+      }),
+    );
+
+    broadcast(key);
+    json(response, 200, { ok: true, message, ...(decision ? { decision } : {}), webhook: delivery });
+  }
+
+  /**
    * Sends a recorded delivery again.
    *
    * The index is the position in `GET /_sim/webhooks`, which is the only handle a
@@ -311,6 +407,7 @@ export function createEmulatorServer(options: ServeOptions): Server {
     ['POST /v22.0/{phone-number-id}/messages', 'Envio, no mesmo shape da Cloud API'],
     ['POST /_sim/inbound', 'Simula uma mensagem do cliente (aceita entry_point)'],
     ['POST /_sim/clock', 'Move o relógio da conversa: {"advance_hours": 26}'],
+    ['POST /_sim/status', 'Marca a última mensagem: {"status": "read"} ou "failed"'],
     ['GET /_sim/state', 'Timeline precificada até agora'],
     ['GET /_sim/events', 'Stream SSE da conversa, usado pelo modo Ao vivo'],
     ['GET /_sim/webhooks', 'Webhooks que foram, ou seriam, entregues'],
@@ -487,6 +584,13 @@ export function createEmulatorServer(options: ServeOptions): Server {
           }
           clockOffsetMs += hours * 3_600_000 + minutes * 60_000;
           json(response, 200, { now: now().toISOString(), offsetMinutes: Math.round(clockOffsetMs / 60_000) });
+          return;
+        }
+
+        // POST /_sim/status — the read receipt and the failed delivery, which a send never
+        // reaches on its own.
+        if (request.method === 'POST' && path === '/_sim/status') {
+          await handleStatus(response, (await readJsonBody(request)) as Record<string, unknown>);
           return;
         }
 

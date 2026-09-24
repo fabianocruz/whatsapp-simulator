@@ -120,6 +120,7 @@ depois, e ela só vale como teste se o emulador negar igual.
 |---|---|
 | `POST /v{versão}/{phone-number-id}/messages` | Envio, no shape da Cloud API |
 | `POST /_sim/inbound` | Simula uma mensagem do cliente (aceita `entry_point`) |
+| `POST /_sim/status` | Marca a mensagem como `read` ou `failed` (falha tira da conta) |
 | `GET /_sim/state` | Timeline precificada até agora |
 | `GET /_sim/webhooks` | Webhooks que foram (ou seriam) entregues |
 | `POST /_sim/webhooks/{índice}/redeliver` | Entrega de novo aquele webhook |

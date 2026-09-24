@@ -362,6 +362,90 @@ describe('local Cloud API emulator', () => {
     });
   });
 
+  /**
+   * A read receipt and a failed delivery are the two statuses an app has to handle and the
+   * emulator never produced. The failed one is also the only way to see a message leave
+   * the bill after it was already on it.
+   */
+  describe('read and failed', () => {
+    const lastStatus = (deliveries: any[]) => {
+      const statuses = deliveries
+        .map((d: any) => d.body.entry[0].changes[0].value.statuses?.[0])
+        .filter(Boolean);
+      return statuses[statuses.length - 1];
+    };
+
+    it('marks the last send as read, and says so in the webhook', async () => {
+      const base = await start({ port: 0, asOf: '2026-09-01', log: () => {} });
+      await post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {
+        messaging_product: 'whatsapp',
+        to: RECIPIENT,
+        type: 'template',
+        template: { name: 'promo', category: 'marketing' },
+      });
+
+      const marked = await post(base, '/_sim/status', { status: 'read' });
+      expect(marked.status).toBe(200);
+      expect(((await marked.json()) as any).message.status).toBe('read');
+
+      const { deliveries } = (await (await fetch(`${base}/_sim/webhooks`)).json()) as any;
+      expect(lastStatus(deliveries).status).toBe('read');
+      // Read is still a delivered message as far as the bill is concerned.
+      const { priced } = (await (await fetch(`${base}/_sim/state`)).json()) as any;
+      expect(priced.totalMicros).toBe(321_700);
+    });
+
+    it('takes a message off the bill when the delivery failed', async () => {
+      const base = await start({ port: 0, asOf: '2026-09-01', log: () => {} });
+      const send = await post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {
+        messaging_product: 'whatsapp',
+        to: RECIPIENT,
+        type: 'template',
+        template: { name: 'promo', category: 'marketing' },
+      });
+      const id = ((await send.json()) as any).messages[0].id;
+
+      const failed = await post(base, '/_sim/status', {
+        message_id: id,
+        status: 'failed',
+        reason: 'this number is not on WhatsApp',
+      });
+      expect(failed.status).toBe(200);
+      expect(((await failed.json()) as any).decision.reasonCode).toBe('NOT_BILLABLE_FAILED');
+
+      const { deliveries } = (await (await fetch(`${base}/_sim/webhooks`)).json()) as any;
+      const last = lastStatus(deliveries);
+      expect(last.status).toBe('failed');
+      expect(last.errors[0].code).toBe(131_026);
+      expect(last.errors[0].error_data.details).toBe('this number is not on WhatsApp');
+
+      const { priced } = (await (await fetch(`${base}/_sim/state`)).json()) as any;
+      expect(priced.totalMicros).toBe(0);
+    });
+
+    it('explains a status, a message or a conversation it cannot find', async () => {
+      const base = await start({ port: 0, asOf: '2026-09-01', log: () => {} });
+      const nothing = await post(base, '/_sim/status', { status: 'read' });
+      expect(nothing.status).toBe(404);
+      expect(((await nothing.json()) as any).error.message).toContain('send a message first');
+
+      await post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {
+        messaging_product: 'whatsapp',
+        to: RECIPIENT,
+        type: 'template',
+        template: { name: 'promo', category: 'marketing' },
+      });
+
+      const unknown = await post(base, '/_sim/status', { status: 'lido' });
+      expect(unknown.status).toBe(400);
+      expect(((await unknown.json()) as any).error.message).toContain('sent, delivered, read or failed');
+
+      const missing = await post(base, '/_sim/status', { status: 'read', message_id: 'wamid.sim.nope' });
+      expect(missing.status).toBe(404);
+      expect(((await missing.json()) as any).error.message).toContain('wamid.sim.nope');
+    });
+  });
+
   it('is one conversation whether or not the number carries a +', async () => {
     const time = clock('2026-09-01T10:00:00.000Z');
     const base = await start({ port: 0, asOf: '2026-09-01', now: time.now, log: () => {} });

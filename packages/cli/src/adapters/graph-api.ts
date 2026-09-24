@@ -337,6 +337,8 @@ export interface StatusWebhookOptions {
     billable: boolean;
     category: string;
   };
+  /** Why the delivery failed. Meta only sends this on `failed`. */
+  errors?: Array<{ code: number; title: string; details?: string }>;
 }
 
 /**
@@ -353,6 +355,15 @@ export function toStatusWebhook(messageId: string, options: StatusWebhookOptions
     timestamp: String(Math.floor(Date.parse(options.timestamp) / 1000)),
     recipient_id: options.recipient.replace(/\D/g, ''),
   };
+
+  if (options.errors && options.errors.length > 0) {
+    status.errors = options.errors.map((error) => ({
+      code: error.code,
+      title: error.title,
+      message: error.title,
+      ...(error.details ? { error_data: { details: error.details } } : {}),
+    }));
+  }
 
   if (options.pricing && options.status === 'delivered') {
     status.pricing = {
