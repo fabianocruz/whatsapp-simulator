@@ -111,6 +111,11 @@ curl -X POST http://127.0.0.1:4290/v22.0/109876543210/messages \
 curl 'http://127.0.0.1:4290/_sim/state'
 ```
 
+Ele também recusa o que a Meta recusaria: fora da janela de 24h, uma mensagem que não é
+template volta `400` com o erro `131047` e não entra na conversa — só template passa. É a
+regra que decide se um agente de cobrança pode falar quando o pagamento entra três dias
+depois, e ela só vale como teste se o emulador negar igual.
+
 | Rota | O que faz |
 |---|---|
 | `POST /v{versão}/{phone-number-id}/messages` | Envio, no shape da Cloud API |

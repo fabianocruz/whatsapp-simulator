@@ -163,6 +163,122 @@ describe('local Cloud API emulator', () => {
     expect(priced.decisions[1].reasonCode).toBe('FREE_IN_FEP');
   });
 
+  /**
+   * The rule the whole product is about, enforced on the wire and not only priced. A
+   * collections agent hits it every time: the debtor agrees on Tuesday and pays on Friday,
+   * and "recebemos" is a free-form send into a window that shut two days earlier.
+   */
+  describe('the 24h customer service window', () => {
+    it('refuses a free-form send after it closed, with Meta’s 131047', async () => {
+      const time = clock('2026-09-01T10:00:00.000Z');
+      const base = await start({ port: 0, asOf: '2026-09-01', now: time.now, log: () => {} });
+
+      await post(base, '/_sim/inbound', {
+        phone_number_id: PHONE_NUMBER_ID,
+        from: RECIPIENT,
+        text: 'Pode mandar o boleto',
+        sent_at: time.now().toISOString(),
+      });
+
+      time.advanceHours(26);
+      const response = await post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: RECIPIENT,
+        type: 'text',
+        text: { preview_url: false, body: 'Recebemos, acordo quitado.' },
+      });
+
+      expect(response.status).toBe(400);
+      const body = (await response.json()) as any;
+      expect(body.error.code).toBe(131_047);
+      expect(body.error.message).toContain('24 hours');
+      expect(body.error.error_data.details).toContain('template');
+
+      // Refused means refused: nothing recorded, and no status webhook for a message that
+      // never went out.
+      const state = (await (
+        await fetch(`${base}/_sim/state?key=${PHONE_NUMBER_ID}:${encodeURIComponent(RECIPIENT)}`)
+      ).json()) as any;
+      expect(state.messages).toHaveLength(1);
+      const { deliveries } = (await (await fetch(`${base}/_sim/webhooks`)).json()) as any;
+      expect(deliveries.filter((d: any) => d.body.entry[0].changes[0].value.statuses)).toHaveLength(0);
+    });
+
+    it('refuses a free-form send to someone who never wrote', async () => {
+      const base = await start({ port: 0, asOf: '2026-09-01', log: () => {} });
+      const response = await post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {
+        messaging_product: 'whatsapp',
+        to: RECIPIENT,
+        type: 'text',
+        text: { body: 'Oi, tudo bem?' },
+      });
+      expect(response.status).toBe(400);
+      expect(((await response.json()) as any).error.code).toBe(131_047);
+      // A refused send does not open a conversation either.
+      expect(((await (await fetch(`${base}/health`)).json()) as any).conversations).toBe(0);
+    });
+
+    it('takes a template after it closed, and free text while it is open', async () => {
+      const time = clock('2026-09-01T10:00:00.000Z');
+      const base = await start({ port: 0, asOf: '2026-09-01', now: time.now, log: () => {} });
+
+      await post(base, '/_sim/inbound', {
+        phone_number_id: PHONE_NUMBER_ID,
+        from: RECIPIENT,
+        text: 'Pode mandar o boleto',
+        sent_at: time.now().toISOString(),
+      });
+      time.advanceHours(1);
+      const inside = await post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {
+        messaging_product: 'whatsapp',
+        to: RECIPIENT,
+        type: 'text',
+        text: { body: 'Segue o boleto.' },
+      });
+      expect(inside.status).toBe(200);
+
+      time.advanceHours(30);
+      const template = await post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {
+        messaging_product: 'whatsapp',
+        to: RECIPIENT,
+        type: 'template',
+        template: { name: 'pagamento_confirmado', category: 'utility' },
+      });
+      expect(template.status).toBe(200);
+    });
+
+    it('takes free text inside a free entry point window, where Meta charges nothing', async () => {
+      const time = clock('2026-09-01T10:00:00.000Z');
+      const base = await start({ port: 0, asOf: '2026-09-01', now: time.now, log: () => {} });
+
+      await post(base, '/_sim/inbound', {
+        phone_number_id: PHONE_NUMBER_ID,
+        from: RECIPIENT,
+        text: 'Vi o anuncio',
+        entry_point: 'click_to_whatsapp_ad',
+        sent_at: time.now().toISOString(),
+      });
+      // The business reply is what opens the 72h FEP window, and it is inside the CSW.
+      await post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {
+        messaging_product: 'whatsapp',
+        to: RECIPIENT,
+        type: 'text',
+        text: { body: 'Oi! Posso ajudar?' },
+      });
+
+      // 30h later the CSW is shut and the FEP is not: the send stands.
+      time.advanceHours(30);
+      const later = await post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {
+        messaging_product: 'whatsapp',
+        to: RECIPIENT,
+        type: 'text',
+        text: { body: 'Ainda posso ajudar?' },
+      });
+      expect(later.status).toBe(200);
+    });
+  });
+
   it('returns a Graph-shaped error for a template category it cannot price', async () => {
     const base = await start({ port: 0, asOf: '2026-09-01', log: () => {} });
     const response = await post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {

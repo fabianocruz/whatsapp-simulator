@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { randomUUID } from 'node:crypto';
-import { priceConversation } from '@dyvit/whatsapp-pricing';
+import { deriveWindows, priceConversation, selectRuleSet } from '@dyvit/whatsapp-pricing';
 import type { Currency, PricedConversation, SimMessage } from '@dyvit/whatsapp-pricing';
 import {
   GraphApiError,
@@ -153,13 +153,45 @@ export function createEmulatorServer(options: ServeOptions): Server {
     });
   }
 
+  /**
+   * Refuses a send Meta would refuse, with Meta's error.
+   *
+   * Outside the customer service window only an approved template may go out, and that is
+   * the rule a collections agent runs into the moment the payment lands three days after
+   * the conversation: it cannot say "recebemos" in free text. An emulator that answers 200
+   * there lets an app pass here and fail against Meta, which is the one thing this tool
+   * exists to prevent.
+   *
+   * The decision is the engine's, not a second opinion: `deriveWindows` is what R6 and R7
+   * read when they price the same message. Reading it one step earlier is the difference
+   * between explaining the refusal after the fact and making it.
+   */
+  function refuseOutsideWindow(prior: readonly SimMessage[], message: SimMessage, sentAt: string): void {
+    if (message.kind !== 'non_template') return;
+    const ruleSet = selectRuleSet(options.asOf ?? now().toISOString().slice(0, 10));
+    const window = deriveWindows(prior, ruleSet).stateAt(sentAt);
+    // R7 first: inside a free entry point window the send is allowed and free, CSW or no CSW.
+    if (window.fepActive || window.cswOpen) return;
+    throw new GraphApiError(
+      '(#131047) Message failed to send because more than 24 hours have passed since the customer ' +
+        'last replied to this message',
+      400,
+      131_047,
+      window.cswOpenUntil
+        ? `the ${ruleSet.cswHours}h customer service window closed at ${window.cswOpenUntil}; ` +
+          'only an approved template may be sent now'
+        : 'the customer has never messaged this number, so no customer service window is open; ' +
+          'only an approved template may be sent now',
+    );
+  }
+
   async function handleSend(
     response: ServerResponse,
     phoneNumberId: string,
     body: GraphSendRequest,
   ): Promise<void> {
     const recipient = body.to ?? 'unknown';
-    const session = sessionFor(`${phoneNumberId}:${recipient}`);
+    const key = `${phoneNumberId}:${recipient}`;
     const sentAt = now().toISOString();
     const id = `wamid.sim.${randomUUID()}`;
 
@@ -168,6 +200,11 @@ export function createEmulatorServer(options: ServeOptions): Server {
       sentAt,
       ...(options.defaultTemplateCategory ? { defaultTemplateCategory: options.defaultTemplateCategory } : {}),
     });
+    // Against the conversation as it stands: a refused send leaves no trace, the way a
+    // message Meta never accepted leaves none. The session is only created once the send
+    // is going to happen.
+    refuseOutsideWindow(sessions.get(key)?.messages ?? [], message, sentAt);
+    const session = sessionFor(key);
     session.messages.push(message);
 
     // The real API accepts first and reports status later. The emulator instead walks the

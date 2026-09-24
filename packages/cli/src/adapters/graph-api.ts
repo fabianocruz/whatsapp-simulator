@@ -64,12 +64,15 @@ export interface GraphSendRequest {
 export class GraphApiError extends Error {
   readonly status: number;
   readonly code: number;
+  /** `error_data.details`, which is where Meta puts the sentence a developer can act on. */
+  readonly details: string | undefined;
 
-  constructor(message: string, status = 400, code = 100) {
+  constructor(message: string, status = 400, code = 100, details?: string) {
     super(message);
     this.name = 'GraphApiError';
     this.status = status;
     this.code = code;
+    this.details = details;
   }
 
   toResponseBody(): unknown {
@@ -78,6 +81,7 @@ export class GraphApiError extends Error {
         message: this.message,
         type: 'OAuthException',
         code: this.code,
+        ...(this.details ? { error_data: { messaging_product: 'whatsapp', details: this.details } } : {}),
         fbtrace_id: 'dyvit-wa-sim',
       },
     };
