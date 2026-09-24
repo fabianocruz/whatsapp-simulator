@@ -31,7 +31,7 @@ test numbers da Meta não calculam custo e os BSPs mostram o próprio markup, n�
 | `@dyvit/whatsapp-pricing` | Motor de preço deterministico: janelas CSW/FEP, tiers, franquia, reason codes |
 | `@dyvit/whatsapp-pricing-data` | Rate cards e rulesets versionados por vigência, como dados abertos |
 | `@dyvit/whatsapp-tips` | 10 regras de otimização com estimativa de economia |
-| `@dyvit/whatsapp-scenários` | Cenarios prontos (exemplo da spec, FEP, suporte longo, OTP) |
+| `@dyvit/whatsapp-scenarios` | Cenarios prontos (exemplo da spec, FEP, suporte longo, OTP) |
 | `@dyvit/whatsapp-simulator-cli` | `dyvit-wa-sim`: precifica um cenário e roda um emulador local da Cloud API |
 | `apps/web` | O simulador: phone frame, taximetro, dicas, share por URL, export CSV/JSON |
 
@@ -46,9 +46,9 @@ pnpm dev:web       # simulador em http://localhost:3000
 ### CLI
 
 ```bash
-pnpm cli -- price --scenário worked-example-spec --compare
+pnpm cli -- price --scenario worked-example-spec --compare
 pnpm cli -- price --file meu-cenário.json --per-month 30000 --csv breakdown.csv
-pnpm cli -- scenários
+pnpm cli -- scenarios
 ```
 
 ### Ver seu app rodando no telefone
