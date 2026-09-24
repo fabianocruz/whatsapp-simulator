@@ -21,6 +21,9 @@ npx @dyvit/whatsapp-simulator-cli serve
 Para fixar a versão, `npx @dyvit/whatsapp-simulator-cli@0.1.1 price`. Para ter o comando
 sempre à mão, `npm i -g @dyvit/whatsapp-simulator-cli` e depois `dyvit-wa-sim price`.
 
+Se você fixou a **0.1.0**, troque: naquela versão o binário instalado saía sem rodar
+comando nenhum e sem imprimir nada. Da 0.1.1 em diante ele funciona.
+
 Pede Node 20.11 ou mais novo. Nenhuma dependência em runtime: o motor de preço, os rate
 cards e os cenários vão dentro do binário.
 

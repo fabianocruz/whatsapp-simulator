@@ -1,4 +1,5 @@
 import { parseArgs } from 'node:util';
+import { realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { listScenarios, runPrice } from './commands/price';
 import { runServe } from './commands/serve';
@@ -157,12 +158,34 @@ export async function main(argv: readonly string[]): Promise<number> {
   });
 }
 
-// Only run when this file IS the entrypoint, so tests can import `main` freely. Comparing
-// module URLs is the check that survives bundling, symlinked bins and tsx.
-const invokedDirectly =
-  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+/**
+ * Whether this file IS the entrypoint, so tests can import `main` freely.
+ *
+ * An installed bin is a symlink: `node_modules/.bin/dyvit-wa-sim` points at
+ * `dist/cli.js`, and Node resolves that symlink when it loads the module. So
+ * `import.meta.url` is the real path while `process.argv[1]` is still the link, and
+ * comparing the two raw never matches. That is how 0.1.0 shipped a binary that parsed
+ * nothing, ran no command and exited 0: silence indistinguishable from success.
+ * Resolving argv[1] to its real path is what makes the two comparable.
+ *
+ * The raw comparison stays as a second chance, for `--preserve-symlinks-main`. That flag
+ * pins `import.meta.url` to the link instead, which is the mirror image of this bug.
+ */
+function isEntrypoint(): boolean {
+  const entry = process.argv[1];
+  if (entry === undefined) return false;
+  const candidates = [entry];
+  try {
+    candidates.push(realpathSync(entry));
+  } catch {
+    // The entry path can be gone or unreadable. Not a reason to kill the process: the raw
+    // comparison is still meaningful, and it is the one that holds on Windows anyway,
+    // where npm writes a .cmd shim rather than a symlink.
+  }
+  return candidates.some((candidate) => import.meta.url === pathToFileURL(candidate).href);
+}
 
-if (invokedDirectly) {
+if (isEntrypoint()) {
   main(process.argv.slice(2))
     .then((code) => {
       process.exitCode = code;
