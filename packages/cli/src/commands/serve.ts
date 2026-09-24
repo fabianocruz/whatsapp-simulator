@@ -1,7 +1,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { deriveWindows, priceConversation, selectRuleSet } from '@dyvit/whatsapp-pricing';
-import type { Currency, PricedConversation, SimMessage } from '@dyvit/whatsapp-pricing';
+import type { ContentType, Currency, InteractiveReply, PricedConversation, SimMessage } from '@dyvit/whatsapp-pricing';
 import {
   GraphApiError,
   fromGraphSendRequest,
@@ -43,6 +43,49 @@ const MAX_BODY_BYTES = 1_000_000;
 
 /** Every status a message can be moved to from outside, which is Meta's whole set. */
 const STATUSES = new Set<SimMessage['status']>(['sent', 'delivered', 'read', 'failed']);
+
+const REPLY_TYPES = ['button_reply', 'list_reply', 'nfm_reply'] as const;
+
+/** What the phone frame shows for each reply shape. */
+const CONTENT_TYPE_BY_REPLY: Record<InteractiveReply['type'], ContentType> = {
+  button_reply: 'interactive_buttons',
+  list_reply: 'interactive_list',
+  nfm_reply: 'flow',
+};
+
+/**
+ * Reads the tap out of an inbound body written the way Meta writes one.
+ *
+ * Outbound interactive already works — a list, a Flow, buttons — and the reply to one is
+ * the other half: showing a debtor "À vista / 3x" is only worth anything if the debtor can
+ * tap one of them. The id is what the app routes on, so a reply without one is refused
+ * rather than carried through empty.
+ */
+function readInteractiveReply(body: Record<string, unknown>): InteractiveReply {
+  const interactive = (body.interactive ?? {}) as Record<
+    string,
+    { id?: unknown; title?: unknown; response_json?: unknown; body?: unknown } | undefined
+  >;
+  for (const type of REPLY_TYPES) {
+    const reply = interactive[type];
+    if (!reply) continue;
+    const id = String((type === 'nfm_reply' ? reply.response_json : reply.id) ?? '');
+    if (!id) {
+      throw new GraphApiError(
+        `interactive.${type} needs ${type === 'nfm_reply' ? 'a response_json' : 'an id'}: ` +
+          'it is what the app routes on',
+        400,
+      );
+    }
+    const title = type === 'nfm_reply' ? reply.body : reply.title;
+    return { type, id, ...(title === undefined ? {} : { title: String(title) }) };
+  }
+  throw new GraphApiError(
+    'an interactive inbound needs interactive.button_reply, interactive.list_reply or ' +
+      'interactive.nfm_reply, the way Meta sends the reply to a list, buttons or a Flow',
+    400,
+  );
+}
 
 async function readJsonBody(request: IncomingMessage): Promise<unknown> {
   const chunks: Buffer[] = [];
@@ -270,6 +313,8 @@ export function createEmulatorServer(options: ServeOptions): Server {
     const from = String(body.from ?? '+5511999999999');
     const key = conversationKey(phoneNumberId, from);
     const session = sessionFor(key);
+    const reply = String(body.type ?? 'text') === 'interactive' ? readInteractiveReply(body) : null;
+    const tapped = reply ? (reply.title ?? reply.id) : null;
     const message: SimMessage = {
       id: `wamid.sim.${randomUUID()}`,
       direction: 'user_to_business',
@@ -277,9 +322,11 @@ export function createEmulatorServer(options: ServeOptions): Server {
       category: 'service',
       sentAt: String(body.sent_at ?? now().toISOString()),
       status: 'delivered',
-      contentType: 'text',
+      contentType: reply ? CONTENT_TYPE_BY_REPLY[reply.type] : 'text',
       entryPoint: (body.entry_point as SimMessage['entryPoint']) ?? 'organic',
-      bodyPreview: String(body.text ?? ''),
+      bodyPreview: tapped ?? String(body.text ?? ''),
+      // The frame renders what the customer tapped as the bubble they would see.
+      ...(reply && tapped ? { interactiveReply: reply, content: { kind: 'text', body: tapped } } : {}),
     };
     session.messages.push(message);
 

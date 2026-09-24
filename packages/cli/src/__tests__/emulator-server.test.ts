@@ -446,6 +446,84 @@ describe('local Cloud API emulator', () => {
     });
   });
 
+  /**
+   * The other half of an interactive send. Showing a debtor "À vista / 3x" is worth
+   * nothing if the debtor cannot tap one, and the id of what was tapped is the field the
+   * app routes on.
+   */
+  describe('an inbound interactive reply', () => {
+    const inboundOf = (deliveries: any[]) =>
+      deliveries
+        .map((d: any) => d.body.entry[0].changes[0].value.messages?.[0])
+        .filter(Boolean)
+        .pop();
+
+    it('carries the button through to the webhook and the timeline', async () => {
+      const base = await start({ port: 0, asOf: '2026-09-01', log: () => {} });
+      const response = await post(base, '/_sim/inbound', {
+        phone_number_id: PHONE_NUMBER_ID,
+        from: RECIPIENT,
+        type: 'interactive',
+        interactive: { type: 'button_reply', button_reply: { id: 'avista', title: 'À vista' } },
+      });
+      expect(response.status).toBe(200);
+      const { message } = (await response.json()) as any;
+      expect(message.contentType).toBe('interactive_buttons');
+      expect(message.bodyPreview).toBe('À vista');
+      expect(message.interactiveReply).toEqual({ type: 'button_reply', id: 'avista', title: 'À vista' });
+
+      const { deliveries } = (await (await fetch(`${base}/_sim/webhooks`)).json()) as any;
+      const inbound = inboundOf(deliveries);
+      expect(inbound.type).toBe('interactive');
+      expect(inbound.interactive).toEqual({
+        type: 'button_reply',
+        button_reply: { id: 'avista', title: 'À vista' },
+      });
+      expect(inbound.text).toBeUndefined();
+    });
+
+    it('carries a list row and a Flow answer too', async () => {
+      const base = await start({ port: 0, asOf: '2026-09-01', log: () => {} });
+      await post(base, '/_sim/inbound', {
+        phone_number_id: PHONE_NUMBER_ID,
+        from: RECIPIENT,
+        type: 'interactive',
+        interactive: { type: 'list_reply', list_reply: { id: '3x', title: '3x sem juros' } },
+      });
+      let { deliveries } = (await (await fetch(`${base}/_sim/webhooks`)).json()) as any;
+      expect(inboundOf(deliveries).interactive.list_reply).toEqual({ id: '3x', title: '3x sem juros' });
+
+      await post(base, '/_sim/inbound', {
+        phone_number_id: PHONE_NUMBER_ID,
+        from: RECIPIENT,
+        type: 'interactive',
+        interactive: { type: 'nfm_reply', nfm_reply: { response_json: '{"parcelas":3}', body: 'Confirmado' } },
+      });
+      ({ deliveries } = (await (await fetch(`${base}/_sim/webhooks`)).json()) as any);
+      expect(inboundOf(deliveries).interactive.nfm_reply.response_json).toBe('{"parcelas":3}');
+    });
+
+    it('still takes a plain text inbound, and says what an interactive one needs', async () => {
+      const base = await start({ port: 0, asOf: '2026-09-01', log: () => {} });
+      await post(base, '/_sim/inbound', {
+        phone_number_id: PHONE_NUMBER_ID,
+        from: RECIPIENT,
+        text: 'Pode mandar',
+      });
+      const { deliveries } = (await (await fetch(`${base}/_sim/webhooks`)).json()) as any;
+      expect(inboundOf(deliveries)).toMatchObject({ type: 'text', text: { body: 'Pode mandar' } });
+
+      const empty = await post(base, '/_sim/inbound', {
+        phone_number_id: PHONE_NUMBER_ID,
+        from: RECIPIENT,
+        type: 'interactive',
+        interactive: { type: 'button_reply' },
+      });
+      expect(empty.status).toBe(400);
+      expect(((await empty.json()) as any).error.message).toContain('button_reply');
+    });
+  });
+
   it('is one conversation whether or not the number carries a +', async () => {
     const time = clock('2026-09-01T10:00:00.000Z');
     const base = await start({ port: 0, asOf: '2026-09-01', now: time.now, log: () => {} });

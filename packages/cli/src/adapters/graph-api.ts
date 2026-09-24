@@ -397,6 +397,51 @@ export function toStatusWebhook(messageId: string, options: StatusWebhookOptions
   };
 }
 
+/** Graph's own `type` for an inbound message, which is not the simulator's ContentType. */
+const GRAPH_TYPE_BY_CONTENT_TYPE: Partial<Record<ContentType, string>> = {
+  text: 'text',
+  image: 'image',
+  audio: 'audio',
+  video: 'video',
+  document: 'document',
+  sticker: 'sticker',
+  location: 'location',
+};
+
+/**
+ * The `messages[0]` body of an inbound webhook.
+ *
+ * A reply to an interactive message is its own shape, and it is the shape a collections
+ * flow is built on: the debtor is shown "À vista / 3x" and taps one. Flattening that to an
+ * empty text message loses the one field the app routes on — the button's id — so the
+ * reply is carried through as Meta sends it.
+ */
+function inboundMessageBody(message: SimMessage): Record<string, unknown> {
+  const reply = message.interactiveReply;
+  if (!reply) {
+    return {
+      type: (message.contentType && GRAPH_TYPE_BY_CONTENT_TYPE[message.contentType]) ?? 'text',
+      text: { body: message.bodyPreview ?? '' },
+    };
+  }
+  if (reply.type === 'nfm_reply') {
+    return {
+      type: 'interactive',
+      interactive: {
+        type: 'nfm_reply',
+        nfm_reply: { name: 'flow', body: reply.title ?? 'Sent', response_json: reply.id },
+      },
+    };
+  }
+  return {
+    type: 'interactive',
+    interactive: {
+      type: reply.type,
+      [reply.type]: { id: reply.id, ...(reply.title ? { title: reply.title } : {}) },
+    },
+  };
+}
+
 /** Builds the inbound-message webhook, for simulating a customer reply. */
 export function toInboundWebhook(
   message: SimMessage,
@@ -422,8 +467,7 @@ export function toInboundWebhook(
                   from: options.from.replace(/\D/g, ''),
                   id: message.id,
                   timestamp: String(Math.floor(Date.parse(message.sentAt) / 1000)),
-                  type: message.contentType === 'text' ? 'text' : (message.contentType ?? 'text'),
-                  text: { body: message.bodyPreview ?? '' },
+                  ...inboundMessageBody(message),
                   ...(message.entryPoint && message.entryPoint !== 'organic'
                     ? { referral: { source_type: message.entryPoint === 'click_to_whatsapp_ad' ? 'ad' : 'post' } }
                     : {}),

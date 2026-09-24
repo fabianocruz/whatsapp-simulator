@@ -25,6 +25,19 @@ export type ContentType =
   | 'cta_url'
   | 'flow';
 
+/**
+ * What the customer tapped, on a message that answers an interactive send.
+ *
+ * `id` is the developer's own id for the button or row — the thing an app routes on — and
+ * `title` is the label the customer saw. A Flow answers with `nfm_reply`, where the id
+ * carries the flow's response payload.
+ */
+export interface InteractiveReply {
+  type: 'button_reply' | 'list_reply' | 'nfm_reply';
+  id: string;
+  title?: string;
+}
+
 export interface SimMessage {
   id: string;
   direction: Direction;
@@ -39,6 +52,11 @@ export interface SimMessage {
   contentType?: ContentType;
   templateName?: string;
   bodyPreview?: string;
+  /**
+   * The button or list row the customer tapped, when this message replies to an
+   * interactive one. Pricing ignores it; the webhook and the phone frame do not.
+   */
+  interactiveReply?: InteractiveReply;
   /**
    * Structured content, when the message came through the Cloud API or a scenario that
    * declares it. The phone frame renders this; pricing ignores it entirely. When absent,
