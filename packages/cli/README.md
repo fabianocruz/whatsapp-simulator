@@ -18,7 +18,7 @@ npx @dyvit/whatsapp-simulator-cli price --scenario worked-example-spec
 npx @dyvit/whatsapp-simulator-cli serve
 ```
 
-Para fixar a versão, `npx @dyvit/whatsapp-simulator-cli@0.2.0 price`. Para ter o comando
+Para fixar a versão, `npx @dyvit/whatsapp-simulator-cli@0.3.0 price`. Para ter o comando
 sempre à mão, `npm i -g @dyvit/whatsapp-simulator-cli` e depois `dyvit-wa-sim price`.
 
 Se você fixou a **0.1.0**, troque: naquela versão o binário instalado saía sem rodar

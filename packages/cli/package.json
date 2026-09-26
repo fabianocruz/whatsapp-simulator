@@ -1,6 +1,6 @@
 {
   "name": "@dyvit/whatsapp-simulator-cli",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "dyvit-wa-sim: price a WhatsApp conversation scenario from the command line, or run a local Cloud API emulator.",
   "keywords": [
     "whatsapp",
