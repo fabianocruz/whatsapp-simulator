@@ -360,6 +360,27 @@ describe('local Cloud API emulator', () => {
       expect(empb.status).toBe(400);
       expect(((await empb.json()) as any).error.message).toContain('indexes');
     });
+
+    it('checks every index before redelivering any', async () => {
+      const base = await start({ port: 0, asOf: '2026-09-01', log: () => {} });
+      await post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {
+        messaging_product: 'whatsapp',
+        to: RECIPIENT,
+        type: 'template',
+        template: { name: 'promo', category: 'marketing' },
+      });
+
+      // Index 0 is fine and 9 is not: nothing goes out, and the count is the list the
+      // caller saw, not one grown by the replay of index 0.
+      const partial = await post(base, '/_sim/replay', { indexes: [0, 9] });
+      expect(partial.status).toBe(404);
+      const message = ((await partial.json()) as any).error.message;
+      expect(message).toContain('there are 2 (0..1)');
+      expect(message).toContain('Nothing was redelivered');
+
+      const { deliveries } = (await (await fetch(`${base}/_sim/webhooks`)).json()) as any;
+      expect(deliveries).toHaveLength(2);
+    });
   });
 
   /**
@@ -438,11 +459,112 @@ describe('local Cloud API emulator', () => {
 
       const unknown = await post(base, '/_sim/status', { status: 'lido' });
       expect(unknown.status).toBe(400);
-      expect(((await unknown.json()) as any).error.message).toContain('sent, delivered, read or failed');
+      expect(((await unknown.json()) as any).error.message).toContain('use read or failed');
 
       const missing = await post(base, '/_sim/status', { status: 'read', message_id: 'wamid.sim.nope' });
       expect(missing.status).toBe(404);
       expect(((await missing.json()) as any).error.message).toContain('wamid.sim.nope');
+    });
+
+    it('marks the most recent send, whichever conversation it went to', async () => {
+      const base = await start({ port: 0, asOf: '2026-09-01', log: () => {} });
+      const sendTo = async (to: string) =>
+        ((await (
+          await post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {
+            messaging_product: 'whatsapp',
+            to,
+            type: 'template',
+            template: { name: 'promo', category: 'marketing' },
+          })
+        ).json()) as any).messages[0].id;
+      await sendTo('+5511911111111');
+      const latest = await sendTo('+5511922222222');
+
+      const marked = await post(base, '/_sim/status', { status: 'read' });
+      expect(((await marked.json()) as any).message.id).toBe(latest);
+    });
+
+    it('does not move a message out of read or failed, nor inject what a send already emits', async () => {
+      const base = await start({ port: 0, asOf: '2026-09-01', log: () => {} });
+      await post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {
+        messaging_product: 'whatsapp',
+        to: RECIPIENT,
+        type: 'template',
+        template: { name: 'promo', category: 'marketing' },
+      });
+
+      const delivered = await post(base, '/_sim/status', { status: 'delivered' });
+      expect(delivered.status).toBe(400);
+
+      expect((await post(base, '/_sim/status', { status: 'read' })).status).toBe(200);
+      const failedAfterRead = await post(base, '/_sim/status', { status: 'failed' });
+      expect(failedAfterRead.status).toBe(409);
+      expect(((await failedAfterRead.json()) as any).error.message).toContain('already read');
+
+      // The bill did not change: the refused status left no trace.
+      const { priced } = (await (await fetch(`${base}/_sim/state`)).json()) as any;
+      expect(priced.totalMicros).toBe(321_700);
+    });
+  });
+
+  /**
+   * The conversation clock runs backwards only when a test asks it to, and Meta's never
+   * does. A customer message left "in the future" by an earlier run keeps its window open,
+   * so the emulator says so and offers a clean slate.
+   */
+  describe('moving the clock back, and starting over', () => {
+    const inbound = (base: string) =>
+      post(base, '/_sim/inbound', { phone_number_id: PHONE_NUMBER_ID, from: RECIPIENT, text: 'Oi' });
+    const freeText = (base: string) =>
+      post(base, `/v22.0/${PHONE_NUMBER_ID}/messages`, {
+        messaging_product: 'whatsapp',
+        to: RECIPIENT,
+        type: 'text',
+        text: { body: 'Recebemos o pagamento.' },
+      });
+
+    it('warns when the clock lands before a message, and a reset of that key clears it', async () => {
+      const time = clock('2026-09-24T01:30:00.000Z');
+      const base = await start({ port: 0, asOf: '2026-09-24', now: time.now, log: () => {} });
+      await inbound(base); // an earlier run's customer message, at 01:30Z
+
+      const back = await post(base, '/_sim/clock', { now: '2026-09-23T17:00:00.000Z' });
+      const backBody = (await back.json()) as any;
+      expect(backBody.warning).toContain('/_sim/reset');
+      expect(backBody.ahead).toEqual([{ key: `${PHONE_NUMBER_ID}:5511999999999`, latest: '2026-09-24T01:30:00.000Z' }]);
+
+      const reset = await post(base, '/_sim/reset', { key: `${PHONE_NUMBER_ID}:${RECIPIENT}` });
+      expect(((await reset.json()) as any).removed).toBe(true);
+
+      // The run as the test meant it: the customer writes at 17:00Z, 26h pass, the window
+      // is closed and free text is refused.
+      await inbound(base);
+      await post(base, '/_sim/clock', { advance_hours: 26 });
+      const late = await freeText(base);
+      expect(late.status).toBe(400);
+      expect(((await late.json()) as any).error.code).toBe(131_047);
+    });
+
+    it('resets everything back to a fresh emulator', async () => {
+      const time = clock('2026-09-24T12:00:00.000Z');
+      const base = await start({ port: 0, asOf: '2026-09-24', now: time.now, log: () => {} });
+      await inbound(base);
+      await post(base, '/_sim/clock', { advance_hours: 5 });
+
+      const reset = await post(base, '/_sim/reset', {});
+      expect(((await reset.json()) as any).now).toBe('2026-09-24T12:00:00.000Z');
+
+      const { deliveries } = (await (await fetch(`${base}/_sim/webhooks`)).json()) as any;
+      expect(deliveries).toEqual([]);
+      expect((await fetch(`${base}/_sim/state`)).status).toBe(404);
+      expect((await post(base, '/_sim/status', { status: 'read' })).status).toBe(404);
+    });
+
+    it('stays quiet when the clock only moves forward', async () => {
+      const base = await start({ port: 0, asOf: '2026-09-24', now: clock('2026-09-24T12:00:00.000Z').now, log: () => {} });
+      await inbound(base);
+      const forward = (await (await post(base, '/_sim/clock', { advance_hours: 2 })).json()) as any;
+      expect(forward.warning).toBeUndefined();
     });
   });
 
@@ -488,10 +610,17 @@ describe('local Cloud API emulator', () => {
         phone_number_id: PHONE_NUMBER_ID,
         from: RECIPIENT,
         type: 'interactive',
-        interactive: { type: 'list_reply', list_reply: { id: '3x', title: '3x sem juros' } },
+        interactive: {
+          type: 'list_reply',
+          list_reply: { id: '3x', title: '3x sem juros', description: 'R$ 400 por mês' },
+        },
       });
       let { deliveries } = (await (await fetch(`${base}/_sim/webhooks`)).json()) as any;
-      expect(inboundOf(deliveries).interactive.list_reply).toEqual({ id: '3x', title: '3x sem juros' });
+      expect(inboundOf(deliveries).interactive.list_reply).toEqual({
+        id: '3x',
+        title: '3x sem juros',
+        description: 'R$ 400 por mês',
+      });
 
       await post(base, '/_sim/inbound', {
         phone_number_id: PHONE_NUMBER_ID,

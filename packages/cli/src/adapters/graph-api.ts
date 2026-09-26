@@ -437,7 +437,11 @@ function inboundMessageBody(message: SimMessage): Record<string, unknown> {
     type: 'interactive',
     interactive: {
       type: reply.type,
-      [reply.type]: { id: reply.id, ...(reply.title ? { title: reply.title } : {}) },
+      [reply.type]: {
+        id: reply.id,
+        ...(reply.title ? { title: reply.title } : {}),
+        ...(reply.description ? { description: reply.description } : {}),
+      },
     },
   };
 }

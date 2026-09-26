@@ -36,6 +36,8 @@ export interface InteractiveReply {
   type: 'button_reply' | 'list_reply' | 'nfm_reply';
   id: string;
   title?: string;
+  /** The second line of a list row, which Meta echoes back with the tap. */
+  description?: string;
 }
 
 export interface SimMessage {

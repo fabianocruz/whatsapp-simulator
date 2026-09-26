@@ -37,6 +37,11 @@ export class WebhookDispatcher {
     return this.log;
   }
 
+  /** Forgets every delivery, so indexes start again at 0. */
+  clear(): void {
+    this.log.length = 0;
+  }
+
   /** `X-Hub-Signature-256`, as Meta computes it: sha256 HMAC of the raw JSON body. */
   sign(rawBody: string): string | null {
     if (!this.options.appSecret) return null;

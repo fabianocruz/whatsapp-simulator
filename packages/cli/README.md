@@ -78,7 +78,11 @@ code. O resto do seu código não muda.
 | `POST /_sim/clock` | Move o relógio da conversa: `{"advance_hours": 26}` |
 | `GET /_sim/state` | Timeline precificada até agora |
 | `GET /_sim/events` | Stream SSE da conversa, usado pelo modo Ao vivo do simulador |
+| `POST /_sim/status` | Marca o último envio (ou o de `message_id`) como `read` ou `failed` |
 | `GET /_sim/webhooks` | Webhooks que foram, ou seriam, entregues |
+| `POST /_sim/webhooks/{índice}/redeliver` | Entrega de novo aquele webhook |
+| `POST /_sim/replay` | Reentrega vários, na ordem pedida: `{"indexes": [2, 1, 1]}` |
+| `POST /_sim/reset` | Zera o emulador, ou só uma conversa: `{"key": "..."}` |
 | `GET /health` | Status do emulador |
 
 Qualquer versão da Graph serve na rota de envio: `/v22.0`, `/v21.0`, o que o seu SDK já
@@ -119,6 +123,11 @@ O relógio próprio é o detalhe que faz o emulador valer alguma coisa. Uma rég
 acontece ao longo de dias, mas o seu script roda em segundos: sem `POST /_sim/clock`, tudo
 cai no mesmo minuto e a janela de 24h nunca fecha, que é justamente o que decide o preço.
 Quem controla o tempo é o emulador, não o seu app.
+
+Ele também recusa o que a Meta recusaria: fora da janela de 24h, uma mensagem que não é
+template volta `400` com o erro `131047` e não entra na conversa. Se o relógio voltar para
+antes de mensagens que já existem, o `POST /_sim/clock` avisa, porque elas continuam contando
+para a janela; `POST /_sim/reset` entre execuções evita a surpresa.
 
 É ferramenta de desenvolvimento: sem autenticação, sem persistência, uma conversa por par
 de números. Não envia mensagem real.

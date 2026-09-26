@@ -92,6 +92,11 @@ Abrir `http://127.0.0.1:4290` no navegador lista todas as rotas do emulador.
 
 Quem controla o tempo é o emulador, não o seu app: ele continua mandando o que já manda.
 
+O relógio também volta, se você pedir, mas as mensagens que já estavam lá ficam onde
+estavam. Uma mensagem do cliente que ficou "no futuro" de uma execução anterior continua
+abrindo a janela, e um envio que o teste esperava recusado passa. O `POST /_sim/clock` avisa
+quando isso acontece; `POST /_sim/reset` entre execuções (ou um número por execução) evita.
+
 Uma observação sobre a porta: o padrão é **4290**, e não 4190, porque a lista de portas
 bloqueadas do padrão Fetch inclui a 4190. Navegadores e o `fetch` do Node recusam conectar
 nela com `bad port`.
@@ -120,11 +125,12 @@ depois, e ela só vale como teste se o emulador negar igual.
 |---|---|
 | `POST /v{versão}/{phone-number-id}/messages` | Envio, no shape da Cloud API |
 | `POST /_sim/inbound` | Mensagem do cliente: texto, toque em botão/lista/Flow, `entry_point` |
-| `POST /_sim/status` | Marca a mensagem como `read` ou `failed` (falha tira da conta) |
+| `POST /_sim/status` | Marca o último envio (ou o de `message_id`) como `read` ou `failed`; falha tira da conta |
 | `GET /_sim/state` | Timeline precificada até agora |
 | `GET /_sim/webhooks` | Webhooks que foram (ou seriam) entregues |
 | `POST /_sim/webhooks/{índice}/redeliver` | Entrega de novo aquele webhook |
 | `POST /_sim/replay` | Reentrega vários, na ordem pedida: `{"indexes": [2, 1, 1]}` |
+| `POST /_sim/reset` | Zera o emulador (conversas, webhooks, relógio), ou só uma conversa com `{"key": ...}` |
 
 ### Usando só o motor de preço
 

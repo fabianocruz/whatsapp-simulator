@@ -41,8 +41,13 @@ interface Subscriber {
 
 const MAX_BODY_BYTES = 1_000_000;
 
-/** Every status a message can be moved to from outside, which is Meta's whole set. */
-const STATUSES = new Set<SimMessage['status']>(['sent', 'delivered', 'read', 'failed']);
+/**
+ * The statuses a message can be moved to from outside. A send already walks itself through
+ * `sent` and `delivered`, so those two are not asked for; `read` and `failed` are where a
+ * message ends, and Meta never moves one out of either.
+ */
+const INJECTABLE_STATUSES = new Set<SimMessage['status']>(['read', 'failed']);
+const FINAL_STATUSES = INJECTABLE_STATUSES;
 
 const REPLY_TYPES = ['button_reply', 'list_reply', 'nfm_reply'] as const;
 
@@ -64,7 +69,7 @@ const CONTENT_TYPE_BY_REPLY: Record<InteractiveReply['type'], ContentType> = {
 function readInteractiveReply(body: Record<string, unknown>): InteractiveReply {
   const interactive = (body.interactive ?? {}) as Record<
     string,
-    { id?: unknown; title?: unknown; response_json?: unknown; body?: unknown } | undefined
+    { id?: unknown; title?: unknown; description?: unknown; response_json?: unknown; body?: unknown } | undefined
   >;
   for (const type of REPLY_TYPES) {
     const reply = interactive[type];
@@ -78,7 +83,13 @@ function readInteractiveReply(body: Record<string, unknown>): InteractiveReply {
       );
     }
     const title = type === 'nfm_reply' ? reply.body : reply.title;
-    return { type, id, ...(title === undefined ? {} : { title: String(title) }) };
+    const description = type === 'list_reply' ? reply.description : undefined;
+    return {
+      type,
+      id,
+      ...(title === undefined ? {} : { title: String(title) }),
+      ...(description === undefined ? {} : { description: String(description) }),
+    };
   }
   throw new GraphApiError(
     'an interactive inbound needs interactive.button_reply, interactive.list_reply or ' +
@@ -157,6 +168,12 @@ function json(response: ServerResponse, status: number, body: unknown): void {
  */
 export function createEmulatorServer(options: ServeOptions): Server {
   const sessions = new Map<string, SessionState>();
+  /**
+   * Every send, in the order it happened. "The last send" means the most recent one across
+   * all conversations, and neither the map's order (which conversation came first) nor
+   * `sentAt` (which the clock can move backwards) says that.
+   */
+  const sends: Array<{ key: string; id: string }> = [];
   const subscribers = new Set<Subscriber>();
   const dispatcher = new WebhookDispatcher({
     ...(options.webhookUrl ? { url: options.webhookUrl } : {}),
@@ -209,6 +226,37 @@ export function createEmulatorServer(options: ServeOptions): Server {
         // A client that went away is dropped on its own 'close' event; ignore the write.
       }
     }
+  }
+
+  /** Tells the UIs watching `key` (or every UI, for null) that the conversation is gone. */
+  function broadcastCleared(key: string | null): void {
+    const payload = JSON.stringify({ key: null, messages: [], priced: null });
+    for (const subscriber of subscribers) {
+      if (key !== null && subscriber.key !== null && subscriber.key !== key) continue;
+      try {
+        subscriber.response.write(`data: ${payload}\n\n`);
+      } catch {
+        // Dropped on its own 'close' event.
+      }
+    }
+  }
+
+  /**
+   * Conversations holding a message later than the clock now reads.
+   *
+   * Meta's clock never runs backwards, so a timeline with a message "from the future" is one
+   * no real conversation has, and the 24h window counts from that message as usual: a send
+   * that a test expects refused can pass because an earlier run left a customer message
+   * later in the day. The clock still moves — pinning it is legitimate — but says so.
+   */
+  function conversationsAhead(): Array<{ key: string; latest: string }> {
+    const at = now().getTime();
+    const ahead = [];
+    for (const [key, session] of sessions) {
+      const latest = session.messages.reduce((max, m) => Math.max(max, Date.parse(m.sentAt)), -Infinity);
+      if (latest > at) ahead.push({ key, latest: new Date(latest).toISOString() });
+    }
+    return ahead;
   }
 
   function price(session: SessionState): PricedConversation {
@@ -272,6 +320,7 @@ export function createEmulatorServer(options: ServeOptions): Server {
     refuseOutsideWindow(sessions.get(key)?.messages ?? [], message, sentAt);
     const session = sessionFor(key);
     session.messages.push(message);
+    sends.push({ key, id });
 
     // The real API accepts first and reports status later. The emulator instead walks the
     // message to `delivered` and dispatches both webhooks before answering the send: a
@@ -338,11 +387,22 @@ export function createEmulatorServer(options: ServeOptions): Server {
   /**
    * Finds the message a status is about: the one asked for by id, or the last one the
    * business sent, which is what a developer means by "mark it read" right after a send.
+   * Without a key that is the most recent send in any conversation.
    */
   function findOutbound(
     keyAsked: string | null,
     messageId: string | null,
   ): { key: string; session: SessionState; message: SimMessage } {
+    if (keyAsked === null && messageId === null) {
+      const last = sends[sends.length - 1];
+      const session = last && sessions.get(last.key);
+      const message = session?.messages.find((m) => m.id === last!.id);
+      if (!last || !session || !message) {
+        throw new GraphApiError('no message from the business yet; send a message first', 404);
+      }
+      return { key: last.key, session, message };
+    }
+
     const entries = [...sessions.entries()].filter(([key]) => keyAsked === null || key === keyAsked);
     if (entries.length === 0) {
       throw new GraphApiError(
@@ -376,9 +436,10 @@ export function createEmulatorServer(options: ServeOptions): Server {
    */
   async function handleStatus(response: ServerResponse, body: Record<string, unknown>): Promise<void> {
     const status = String(body.status ?? '') as SimMessage['status'];
-    if (!STATUSES.has(status)) {
+    if (!INJECTABLE_STATUSES.has(status)) {
       throw new GraphApiError(
-        `unknown status "${String(body.status ?? '')}"; use sent, delivered, read or failed`,
+        `status "${String(body.status ?? '')}" cannot be injected; use read or failed ` +
+          '(a send already reaches sent and delivered on its own)',
         400,
       );
     }
@@ -391,6 +452,13 @@ export function createEmulatorServer(options: ServeOptions): Server {
       throw new GraphApiError(
         `${message.id} is a message from the customer, and only what the business sent carries a status`,
         400,
+      );
+    }
+    if (message.status && FINAL_STATUSES.has(message.status)) {
+      throw new GraphApiError(
+        `${message.id} is already ${message.status}, and a message does not leave read or failed; ` +
+          'send another message to mark that one',
+        409,
       );
     }
 
@@ -429,24 +497,31 @@ export function createEmulatorServer(options: ServeOptions): Server {
   }
 
   /**
-   * Sends a recorded delivery again.
+   * Sends recorded deliveries again, in the order given.
    *
    * The index is the position in `GET /_sim/webhooks`, which is the only handle a
    * developer has on a delivery, so an index that does not exist says how many there are
-   * rather than answering a bare 404.
+   * rather than answering a bare 404. Every index is checked before anything goes out: a
+   * replay either happens whole or not at all, and the count in the error is the list as
+   * the caller saw it, not one already grown by the replay's own deliveries.
    */
-  async function replayDelivery(index: number): Promise<unknown> {
+  async function replayDeliveries(indexes: readonly number[]): Promise<unknown[]> {
     const count = dispatcher.deliveries.length;
-    if (!Number.isInteger(index) || index < 0 || index >= count) {
-      throw new GraphApiError(
-        `no webhook delivery at index ${index}; ` +
-          (count === 0
-            ? 'nothing has been delivered yet (GET /_sim/webhooks)'
-            : `there are ${count} (0..${count - 1}), listed by GET /_sim/webhooks`),
-        404,
-      );
+    for (const index of indexes) {
+      if (!Number.isInteger(index) || index < 0 || index >= count) {
+        throw new GraphApiError(
+          `no webhook delivery at index ${index}; ` +
+            (count === 0
+              ? 'nothing has been delivered yet (GET /_sim/webhooks)'
+              : `there are ${count} (0..${count - 1}), listed by GET /_sim/webhooks`) +
+            (indexes.length > 1 ? '. Nothing was redelivered.' : ''),
+          404,
+        );
+      }
     }
-    return dispatcher.redeliver(index);
+    const deliveries = [];
+    for (const index of indexes) deliveries.push(await dispatcher.redeliver(index));
+    return deliveries;
   }
 
   /** The routes this server answers, in one place so `/` and the 404 cannot disagree. */
@@ -454,7 +529,8 @@ export function createEmulatorServer(options: ServeOptions): Server {
     ['POST /v22.0/{phone-number-id}/messages', 'Envio, no mesmo shape da Cloud API'],
     ['POST /_sim/inbound', 'Simula uma mensagem do cliente (aceita entry_point)'],
     ['POST /_sim/clock', 'Move o relógio da conversa: {"advance_hours": 26}'],
-    ['POST /_sim/status', 'Marca a última mensagem: {"status": "read"} ou "failed"'],
+    ['POST /_sim/status', 'Marca o último envio: {"status": "read"} ou "failed"'],
+    ['POST /_sim/reset', 'Zera o emulador, ou só uma conversa: {"key": "..."}'],
     ['GET /_sim/state', 'Timeline precificada até agora'],
     ['GET /_sim/events', 'Stream SSE da conversa, usado pelo modo Ao vivo'],
     ['GET /_sim/webhooks', 'Webhooks que foram, ou seriam, entregues'],
@@ -591,7 +667,8 @@ export function createEmulatorServer(options: ServeOptions): Server {
         // POST /_sim/webhooks/{index}/redeliver — the same delivery, sent again.
         const redeliver = /^\/_sim\/webhooks\/(\d+)\/redeliver$/.exec(path);
         if (request.method === 'POST' && redeliver) {
-          json(response, 200, { delivery: await replayDelivery(Number(redeliver[1])) });
+          const [delivery] = await replayDeliveries([Number(redeliver[1])]);
+          json(response, 200, { delivery });
           return;
         }
 
@@ -608,9 +685,7 @@ export function createEmulatorServer(options: ServeOptions): Server {
               400,
             );
           }
-          const deliveries = [];
-          for (const index of body.indexes) deliveries.push(await replayDelivery(Number(index)));
-          json(response, 200, { deliveries });
+          json(response, 200, { deliveries: await replayDeliveries(body.indexes.map(Number)) });
           return;
         }
 
@@ -630,7 +705,40 @@ export function createEmulatorServer(options: ServeOptions): Server {
             throw new GraphApiError('advance_hours and advance_minutes must be numbers', 400);
           }
           clockOffsetMs += hours * 3_600_000 + minutes * 60_000;
-          json(response, 200, { now: now().toISOString(), offsetMinutes: Math.round(clockOffsetMs / 60_000) });
+          const ahead = conversationsAhead();
+          const warning = ahead.length
+            ? `the clock is now before ${ahead.length} conversation(s) with later messages, and their ` +
+              'windows still count from those messages. POST /_sim/reset (optionally {"key": ...}) ' +
+              'to start clean, or use another number'
+            : null;
+          if (warning) log(`[clock] ${warning}: ${ahead.map((a) => a.key).join(', ')}`);
+          json(response, 200, {
+            now: now().toISOString(),
+            offsetMinutes: Math.round(clockOffsetMs / 60_000),
+            ...(warning ? { warning, ahead } : {}),
+          });
+          return;
+        }
+
+        // POST /_sim/reset — back to a fresh emulator, or one conversation dropped.
+        //   {}                               everything: conversations, webhooks, clock
+        //   { "key": "<phoneNumberId>:<n>" } that conversation only; webhook indexes stay
+        if (request.method === 'POST' && path === '/_sim/reset') {
+          const body = (await readJsonBody(request)) as { key?: unknown };
+          if (body.key !== undefined) {
+            const key = normalizeKey(String(body.key));
+            const removed = sessions.delete(key);
+            for (let i = sends.length - 1; i >= 0; i--) if (sends[i]!.key === key) sends.splice(i, 1);
+            if (removed) broadcastCleared(key);
+            json(response, 200, { ok: true, key, removed });
+            return;
+          }
+          sessions.clear();
+          sends.length = 0;
+          dispatcher.clear();
+          clockOffsetMs = 0;
+          broadcastCleared(null);
+          json(response, 200, { ok: true, now: now().toISOString() });
           return;
         }
 
