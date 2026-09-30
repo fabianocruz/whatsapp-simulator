@@ -20,6 +20,8 @@ const nextConfig = {
   // o site exportado para dentro da pasta de build em vez de `out/`.
   ...(process.env.NODE_ENV === 'production' ? {} : { distDir: '.next-dev' }),
   reactStrictMode: true,
+  // Gravacao do video: sem o selo do Next no canto da tela.
+  devIndicators: false,
   // Workspace packages ship TypeScript source rather than a build step.
   transpilePackages: ['@dyvit/whatsapp-pricing', '@dyvit/whatsapp-pricing-data', '@dyvit/whatsapp-tips', '@dyvit/whatsapp-scenarios'],
   images: { unoptimized: true },

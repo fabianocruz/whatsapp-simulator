@@ -1,6 +1,8 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { formatWhatsApp } from './ChatBubble';
 import type { MessageButton, MessageContent as Content, MessageHeader } from '@dyvit/whatsapp-pricing';
 import { WA } from './wa-theme';
 
@@ -135,7 +137,9 @@ export function splitContent(content: Content): { body: ReactNode; actions: Reac
         ? <ListAction content={content} />
         : content.kind === 'flow'
           ? <FlowAction content={content} />
-          : null;
+          : content.kind === 'order'
+            ? <OrderAction content={content} />
+            : null;
 
   return { body: <MessageContentView content={content} />, actions };
 }
@@ -179,10 +183,117 @@ function FlowAction({ content }: { content: Extract<Content, { kind: 'flow' }> }
   );
 }
 
+type Order = Extract<Content, { kind: 'order' }>;
+
+function money(minor: number, currency: string): string {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(minor / 100);
+}
+
+const BAG_ICON = 'M6 7h12l1 13H5L6 7zM9 7V6a3 3 0 0 1 6 0v1';
+
+/** The top of an order card: what is being paid and the total, the way WhatsApp leads with it. */
+function OrderSummary({ content }: { content: Order }) {
+  const count = content.items.reduce((n, item) => n + item.quantity, 0) || 1;
+  const title = content.items[0]?.name ?? 'Pedido';
+  return (
+    <div className="-mx-1 -mt-0.5 mb-2 flex items-center gap-3 rounded-[8px] bg-black/20 p-2.5">
+      <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[6px] bg-white/10 text-white/80">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d={BAG_ICON} stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+        </svg>
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[14px] font-medium text-white/95">{title}</div>
+        <div className="text-[12px] text-white/55">
+          {count} {count === 1 ? 'item' : 'itens'} · <span className="font-semibold text-white/90">{money(content.totalMinor, content.currency)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * "Revisar e pagar". In the app it opens a sheet with the order and the ways to pay; here
+ * it opens the same sheet over the chat, and copying really copies the string that arrived.
+ */
+function OrderAction({ content }: { content: Order }) {
+  const [open, setOpen] = useState(false);
+  const [root, setRoot] = useState<HTMLElement | null>(null);
+  useEffect(() => setRoot(document.getElementById('wa-sheet-root')), []);
+  return (
+    <>
+      <button type="button" className="block w-full" onClick={() => setOpen(true)}>
+        <ActionRow
+          label="Revisar e pagar"
+          icon={
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d={BAG_ICON} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+            </svg>
+          }
+        />
+      </button>
+      {open && root && createPortal(<OrderSheet content={content} onClose={() => setOpen(false)} />, root)}
+    </>
+  );
+}
+
+function OrderSheet({ content, onClose }: { content: Order; onClose: () => void }) {
+  const [copied, setCopied] = useState<string | null>(null);
+  const copy = (label: string, value: string) => {
+    void navigator.clipboard?.writeText(value).catch(() => {});
+    setCopied(label);
+    setTimeout(() => setCopied(null), 1800);
+  };
+  return (
+    <div className="pointer-events-auto absolute inset-0 flex flex-col justify-end bg-black/50" onClick={onClose}>
+      <div className="rounded-t-[16px] px-4 pb-6 pt-2" style={{ background: '#1F2C34' }} onClick={(e) => e.stopPropagation()}>
+        <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-white/25" />
+        <div className="mb-3 text-center text-[15px] font-semibold text-white/95">Revisar pedido</div>
+        {content.items.map((item, i) => (
+          <div key={i} className="flex items-center justify-between border-b border-white/10 py-2 text-[13px] text-white/85">
+            <span className="min-w-0 truncate pr-3">
+              {item.quantity}× {item.name}
+            </span>
+            <span className="shrink-0">{money(item.amountMinor * item.quantity, content.currency)}</span>
+          </div>
+        ))}
+        <div className="flex items-center justify-between py-2.5 text-[15px] font-semibold text-white/95">
+          <span>Total</span>
+          <span>{money(content.totalMinor, content.currency)}</span>
+        </div>
+        {content.pix && (
+          <div className="mt-1 rounded-[10px] bg-black/25 p-3">
+            <div className="text-[13px] font-medium text-white/90">Pagar com Pix</div>
+            {content.pix.merchantName && !/6304STUB$/.test(content.pix.code) && <div className="mt-0.5 text-[12px] text-white/50">Recebedor: {content.pix.merchantName}</div>}
+            <div className="mt-1 text-[12px] leading-snug text-white/55">Copie o código e cole no app do seu banco, na opção Pix Copia e Cola.</div>
+            <button
+              type="button"
+              className="mt-2.5 w-full rounded-full py-2 text-[14px] font-semibold text-[#0B141A]"
+              style={{ background: '#21C063' }}
+              onClick={() => copy('pix', content.pix!.code)}
+            >
+              {copied === 'pix' ? 'Código copiado' : 'Copiar código Pix'}
+            </button>
+          </div>
+        )}
+        {content.boleto && (
+          <button
+            type="button"
+            className="mt-2 w-full rounded-full border border-white/20 py-2 text-[14px] text-[#53BDEB]"
+            onClick={() => copy('boleto', content.boleto!)}
+          >
+            {copied === 'boleto' ? 'Linha digitável copiada' : 'Copiar linha digitável do boleto'}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function MessageContentView({ content }: { content: Content }) {
   switch (content.kind) {
     case 'text':
-      return <span className="whitespace-pre-wrap break-words">{content.body}</span>;
+      return <span className="whitespace-pre-wrap break-words">{formatWhatsApp(content.body)}</span>;
 
     case 'media':
       return (
@@ -210,7 +321,7 @@ function MessageContentView({ content }: { content: Content }) {
       return (
         <>
           {content.header && <HeaderBlock header={content.header} />}
-          <span className="whitespace-pre-wrap break-words">{content.body}</span>
+          <span className="whitespace-pre-wrap break-words">{formatWhatsApp(content.body)}</span>
           {content.footer && <span className="mt-1 block text-[12px] text-white/45">{content.footer}</span>}
         </>
       );
@@ -219,7 +330,7 @@ function MessageContentView({ content }: { content: Content }) {
       return (
         <>
           {content.header && <div className="mb-1 text-[14px] font-semibold text-white/95">{content.header}</div>}
-          <span className="whitespace-pre-wrap break-words">{content.body}</span>
+          <span className="whitespace-pre-wrap break-words">{formatWhatsApp(content.body)}</span>
           {content.footer && <span className="mt-1 block text-[12px] text-white/45">{content.footer}</span>}
           {/* The sheet WhatsApp opens, shown inline: a collapsed list hides the very thing
               the developer is trying to check. */}
@@ -243,11 +354,20 @@ function MessageContentView({ content }: { content: Content }) {
         </>
       );
 
+    case 'order':
+      return (
+        <>
+          <OrderSummary content={content} />
+          <span className="whitespace-pre-wrap break-words">{formatWhatsApp(content.body)}</span>
+          {content.footer && <span className="mt-1 block text-[12px] text-white/45">{content.footer}</span>}
+        </>
+      );
+
     case 'flow':
       return (
         <>
           {content.header && <div className="mb-1 text-[14px] font-semibold text-white/95">{content.header}</div>}
-          <span className="whitespace-pre-wrap break-words">{content.body}</span>
+          <span className="whitespace-pre-wrap break-words">{formatWhatsApp(content.body)}</span>
           {content.footer && <span className="mt-1 block text-[12px] text-white/45">{content.footer}</span>}
         </>
       );

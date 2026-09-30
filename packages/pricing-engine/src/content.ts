@@ -85,6 +85,22 @@ export type MessageContent =
       footer?: string;
       /** Label of the button that opens the Flow. */
       ctaText: string;
+    }
+  | {
+      /**
+       * WhatsApp's payment card in Brazil (`order_details`, action `review_and_pay`):
+       * the total on top, one "Revisar e pagar" button, and the payment options in the
+       * sheet that button opens.
+       */
+      kind: 'order';
+      body: string;
+      footer?: string;
+      currency: string;
+      totalMinor: number;
+      items: Array<{ name: string; quantity: number; amountMinor: number }>;
+      pix?: { code: string; merchantName: string };
+      boleto?: string;
+      paymentLink?: string;
     };
 
 /** One line of text for a message, for the CLI table and for accessible labels. */
@@ -103,5 +119,7 @@ export function contentSummary(content: MessageContent): string {
       return `${content.body} · ${content.buttonText}`;
     case 'flow':
       return `${content.body} · ${content.ctaText}`;
+    case 'order':
+      return `${content.body} · ${(content.totalMinor / 100).toFixed(2)} ${content.currency}`;
   }
 }

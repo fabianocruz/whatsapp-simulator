@@ -13,7 +13,7 @@ import { WA } from './wa-theme';
  */
 
 /** WhatsApp's own inline formatting: *bold*, _italic_, ~strike~, ```mono```. */
-function formatWhatsApp(text: string): ReactNode[] {
+export function formatWhatsApp(text: string): ReactNode[] {
   const result: ReactNode[] = [];
   const pattern = /(\*(.+?)\*|_(.+?)_|~(.+?)~|```(.+?)```)/gs;
   let lastIndex = 0;
@@ -117,7 +117,7 @@ function Bubble({
           >
             <div className="px-3 py-2">
               {header}
-              <div className="whitespace-pre-wrap break-words text-[14px] leading-[20px] text-white/95">{formatted}</div>
+              <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] [&_*]:[overflow-wrap:anywhere] text-[14px] leading-[20px] text-white/95">{formatted}</div>
               <div className="mt-1 flex items-center justify-end gap-1" style={{ color: WA.timestamp }}>
                 <span className="text-[11px] leading-none">{time}</span>
                 {outbound && status && <Ticks status={status} />}

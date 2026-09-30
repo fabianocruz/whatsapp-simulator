@@ -9,6 +9,7 @@ import { splitContent } from './MessageContent';
 import { DeviceChrome } from './DeviceChrome';
 import { PriceChip } from './PriceChip';
 import { WA } from './wa-theme';
+import { PixQr, isPixBrCode } from './PixQr';
 
 interface Props {
   messages: readonly SimMessage[];
@@ -18,6 +19,9 @@ interface Props {
   onOpenTrace: (decision: PriceDecision) => void;
   onRemove: (id: string) => void;
   highlighted: ReadonlySet<string>;
+  /** Presentation mode: no price chips or rule-set caption, and a configurable contact. */
+  presentation?: boolean;
+  contactName?: string;
 }
 
 const CONTENT_GLYPH: Record<string, string> = {
@@ -33,7 +37,7 @@ const CONTENT_GLYPH: Record<string, string> = {
   flow: '🧩',
 };
 
-export function PhoneFrame({ messages, priced, locale, dict, onOpenTrace, onRemove, highlighted }: Props) {
+export function PhoneFrame({ messages, priced, locale, dict, onOpenTrace, onRemove, highlighted, presentation = false, contactName = 'Dyvit Simulator' }: Props) {
   const chatRef = useRef<HTMLDivElement>(null);
 
   // Pin the view to the newest message, the way a real chat does. Without this a message
@@ -63,14 +67,14 @@ export function PhoneFrame({ messages, priced, locale, dict, onOpenTrace, onRemo
     }
 
     const { cswOpen, cswOpenUntil, fepActive, fepActiveUntil } = decision.windowState;
-    if (fepActive && !previousFep) {
+    if (fepActive && !previousFep && !presentation) {
       items.push(
         <SystemMessage key={`fep-${decision.messageId}`} tone="accent">
           {`${dict.fepActive} · ${clockTime(fepActiveUntil ?? message.sentAt, locale)}`}
         </SystemMessage>,
       );
     }
-    if (previousCsw !== cswOpen) {
+    if (previousCsw !== cswOpen && !presentation) {
       items.push(
         <SystemMessage key={`csw-${decision.messageId}`} tone={cswOpen ? 'accent' : 'neutral'}>
           {cswOpen ? `${dict.cswOpenUntil} ${clockTime(cswOpenUntil ?? message.sentAt, locale)}` : dict.cswClosed}
@@ -86,6 +90,8 @@ export function PhoneFrame({ messages, priced, locale, dict, onOpenTrace, onRemo
     const split = message.content ? splitContent(message.content) : null;
     const body: ReactNode =
       split?.body ?? `${glyph ? `${glyph} ` : ''}${message.bodyPreview || (glyph ? message.contentType : '…')}`;
+    const text = typeof body === 'string' ? body : (message.bodyPreview ?? '');
+    const shown: ReactNode = presentation && isPixBrCode(text) ? <PixQr code={text} /> : body;
 
     const header =
       message.kind === 'template' ? (
@@ -94,7 +100,7 @@ export function PhoneFrame({ messages, priced, locale, dict, onOpenTrace, onRemo
         </span>
       ) : undefined;
 
-    const chip = (
+    const chip = presentation ? null : (
       <PriceChip
         decision={decision}
         locale={locale}
@@ -107,7 +113,7 @@ export function PhoneFrame({ messages, priced, locale, dict, onOpenTrace, onRemo
       time: clockTime(message.sentAt, locale),
       chip,
       highlighted: highlighted.has(message.id),
-      onRemove: () => onRemove(message.id),
+      ...(presentation ? {} : { onRemove: () => onRemove(message.id) }),
       removeLabel: `${dict.removeMessage}: ${message.id}`,
       ...(header ? { header } : {}),
       ...(split?.actions ? { actions: split.actions } : {}),
@@ -116,11 +122,11 @@ export function PhoneFrame({ messages, priced, locale, dict, onOpenTrace, onRemo
     items.push(
       message.direction === 'business_to_user' ? (
         <OutboundBubble key={message.id} {...common} status={message.status}>
-          {body}
+          {shown}
         </OutboundBubble>
       ) : (
         <InboundBubble key={message.id} {...common}>
-          {body}
+          {shown}
         </InboundBubble>
       ),
     );
@@ -129,8 +135,8 @@ export function PhoneFrame({ messages, priced, locale, dict, onOpenTrace, onRemo
   return (
     <div className="flex flex-col items-center gap-3">
       <DeviceChrome
-        contactName="Dyvit Simulator"
-        subtitle={`${priced.market} · ${priced.currency}`}
+        contactName={contactName}
+        subtitle={presentation ? 'online' : `${priced.market} · ${priced.currency}`}
         // A fixed clock, not the viewer's: a shared scenario has to render identically for
         // everyone who opens the link.
         clock={clockTime(messages[0]?.sentAt ?? priced.asOf, locale)}
@@ -157,7 +163,7 @@ export function PhoneFrame({ messages, priced, locale, dict, onOpenTrace, onRemo
         </div>
       </DeviceChrome>
 
-      <p className="mono text-[10px] uppercase tracking-widest text-[color:var(--color-ink-40)]">
+      <p className={`mono text-[10px] uppercase tracking-widest text-[color:var(--color-ink-40)] ${presentation ? 'hidden' : ''}`}>
         {priced.ruleSet.id}
       </p>
     </div>

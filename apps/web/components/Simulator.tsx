@@ -174,6 +174,17 @@ export function Simulator() {
     }
   }, [state]);
 
+  // Presentation mode (?apresentacao=1&contato=Nome): only the phone, larger, no price chips,
+  // connected to the emulator on its own. For filming a conversation, not for pricing one.
+  const [presentation, setPresentation] = useState<{ on: boolean; contact: string } | null>(null);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    setPresentation({ on: q.get('apresentacao') === '1', contact: q.get('contato') ?? 'Dyvit Simulator' });
+  }, []);
+  useEffect(() => {
+    if (presentation?.on && state && liveStatus === 'off') toggleLive();
+  }, [presentation, state, liveStatus, toggleLive]);
+
   if (!state || !analysis) {
     return <main className="p-10 text-[13px] text-[color:var(--color-ink-40)]">…</main>;
   }
@@ -188,6 +199,26 @@ export function Simulator() {
     setJustShared(true);
     if (shareTimer.current) clearTimeout(shareTimer.current);
     shareTimer.current = setTimeout(() => setJustShared(false), 2_000);
+  }
+
+  if (presentation?.on && priced) {
+    return (
+      <main className="flex min-h-screen items-center justify-center py-6" style={{ background: '#efeae2' }}>
+        <div style={{ zoom: 1.3 }}>
+          <PhoneFrame
+            messages={state.messages}
+            priced={priced}
+            locale={state.locale}
+            dict={dict}
+            onOpenTrace={setTrace}
+            onRemove={removeMessage}
+            highlighted={highlighted}
+            presentation
+            contactName={presentation.contact}
+          />
+        </div>
+      </main>
+    );
   }
 
   return (
