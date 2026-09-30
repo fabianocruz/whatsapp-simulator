@@ -184,6 +184,24 @@ export function Simulator() {
   useEffect(() => {
     if (presentation?.on && state && liveStatus === 'off') toggleLive();
   }, [presentation, state, liveStatus, toggleLive]);
+  // Fit the phone to the window: 92% of the height (or width, if narrower), measured unscaled.
+  const phoneRef = useRef<HTMLDivElement | null>(null);
+  const [phoneScale, setPhoneScale] = useState(1);
+  useEffect(() => {
+    if (!presentation?.on) return;
+    const fit = () => {
+      const el = phoneRef.current;
+      if (!el || !el.offsetHeight) return;
+      setPhoneScale(Math.min((window.innerHeight * 0.92) / el.offsetHeight, (window.innerWidth * 0.9) / el.offsetWidth));
+    };
+    fit();
+    const again = setTimeout(fit, 50);
+    window.addEventListener('resize', fit);
+    return () => {
+      clearTimeout(again);
+      window.removeEventListener('resize', fit);
+    };
+  }, [presentation, state]);
 
   if (!state || !analysis) {
     return <main className="p-10 text-[13px] text-[color:var(--color-ink-40)]">…</main>;
@@ -203,8 +221,9 @@ export function Simulator() {
 
   if (presentation?.on && priced) {
     return (
-      <main className="flex min-h-screen items-center justify-center py-6" style={{ background: '#efeae2' }}>
-        <div style={{ zoom: 1.3 }}>
+      <main className="fixed inset-0 flex items-center justify-center overflow-hidden" style={{ background: '#efeae2' }}>
+        {/* Scaled with a transform, which never moves the layout: the phone stays dead centre at any window size. */}
+        <div ref={phoneRef} style={{ transform: `scale(${phoneScale})`, transformOrigin: 'center center' }}>
           <PhoneFrame
             messages={state.messages}
             priced={priced}
