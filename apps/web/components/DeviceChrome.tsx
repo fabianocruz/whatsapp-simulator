@@ -66,6 +66,8 @@ export function DeviceChrome({ contactName, subtitle, clock, inputPlaceholder, c
         <div className="absolute -right-[2px] top-[165px] h-[44px] w-[3px] rounded-r-[2px]" style={{ background: '#2A2A2A' }} aria-hidden="true" />
 
         <div className="relative flex flex-1 flex-col overflow-hidden" style={{ borderRadius: 42, background: WA.chatBg }}>
+          {/* Where a sheet WhatsApp opens over the chat (an order's "Revisar e pagar") is drawn. */}
+          <div id="wa-sheet-root" className="pointer-events-none absolute inset-0 z-30" />
           <div className="absolute left-1/2 top-[10px] z-20 -translate-x-1/2" aria-hidden="true">
             <div className="rounded-full" style={{ width: 120, height: 34, background: '#000' }} />
           </div>
@@ -80,7 +82,7 @@ export function DeviceChrome({ contactName, subtitle, clock, inputPlaceholder, c
               <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full" style={{ background: '#0A6E4A' }}>
-              <span className="text-[15px] font-bold text-white">D</span>
+              <span className="text-[15px] font-bold text-white">{contactName.trim().charAt(0).toUpperCase() || 'D'}</span>
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[15px] font-medium leading-tight text-white/95">{contactName}</div>

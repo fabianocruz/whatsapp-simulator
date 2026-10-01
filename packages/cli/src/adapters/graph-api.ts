@@ -55,7 +55,19 @@ export interface GraphSendRequest {
       button?: string;
       sections?: Array<{ title?: string; rows?: Array<{ id?: string; title?: string; description?: string }> }>;
       name?: string;
-      parameters?: { flow_cta?: string; flow_name?: string };
+      parameters?: {
+        flow_cta?: string;
+        flow_name?: string;
+        currency?: string;
+        total_amount?: { value?: number; offset?: number };
+        order?: { items?: Array<{ name?: string; quantity?: number; amount?: { value?: number; offset?: number } }> };
+        payment_settings?: Array<{
+          type?: string;
+          pix_dynamic_code?: { code?: string; merchant_name?: string };
+          boleto?: { digitable_line?: string };
+          payment_link?: { uri?: string };
+        }>;
+      };
     };
   };
   [key: string]: unknown;
@@ -217,6 +229,30 @@ function contentOf(request: GraphSendRequest, type: string): MessageContent | un
         body,
         ...(footer ? { footer } : {}),
         ctaText: it.action?.parameters?.flow_cta ?? 'Abrir',
+      };
+    }
+
+    if (it?.type === 'order_details') {
+      const params = it.action?.parameters ?? {};
+      const minor = (m?: { value?: number; offset?: number }) => Math.round(((m?.value ?? 0) * 100) / (m?.offset || 100));
+      const setting = (t: string) => (params.payment_settings ?? []).find((s) => s.type === t);
+      const pix = setting('pix_dynamic_code')?.pix_dynamic_code;
+      const boleto = setting('boleto')?.boleto?.digitable_line;
+      const link = setting('payment_link')?.payment_link?.uri;
+      return {
+        kind: 'order',
+        body,
+        ...(footer ? { footer } : {}),
+        currency: params.currency ?? 'BRL',
+        totalMinor: minor(params.total_amount),
+        items: (params.order?.items ?? []).map((item) => ({
+          name: item.name ?? '',
+          quantity: item.quantity ?? 1,
+          amountMinor: minor(item.amount),
+        })),
+        ...(pix?.code ? { pix: { code: pix.code, merchantName: pix.merchant_name ?? '' } } : {}),
+        ...(boleto ? { boleto } : {}),
+        ...(link ? { paymentLink: link } : {}),
       };
     }
 

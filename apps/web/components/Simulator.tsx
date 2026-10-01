@@ -174,6 +174,55 @@ export function Simulator() {
     }
   }, [state]);
 
+  // Presentation mode (?apresentacao=1&contato=Nome): only the phone, larger, no price chips,
+  // connected to the emulator on its own. For filming a conversation, not for pricing one.
+  const [presentation, setPresentation] = useState<{ on: boolean; contact: string } | null>(null);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const on = q.get('apresentacao') === '1';
+    const contact = q.get('contato') ?? 'Dyvit Simulator';
+    setPresentation({ on, contact });
+
+  }, []);
+  // The window title is on camera in presentation mode: it names the chat, not the simulator. Next writes
+  // its own metadata title back after hydration, so the chat's name is re-applied whenever the head changes.
+  useEffect(() => {
+    if (!presentation?.on) return;
+    const want = presentation.contact;
+    const apply = () => {
+      if (document.title !== want) document.title = want;
+    };
+    apply();
+    const observer = new MutationObserver(apply);
+    observer.observe(document.head, { subtree: true, childList: true, characterData: true });
+    const timer = setInterval(apply, 500);
+    return () => {
+      observer.disconnect();
+      clearInterval(timer);
+    };
+  }, [presentation]);
+  useEffect(() => {
+    if (presentation?.on && state && liveStatus === 'off') toggleLive();
+  }, [presentation, state, liveStatus, toggleLive]);
+  // Fit the phone to the window: 92% of the height (or width, if narrower), measured unscaled.
+  const phoneRef = useRef<HTMLDivElement | null>(null);
+  const [phoneScale, setPhoneScale] = useState(1);
+  useEffect(() => {
+    if (!presentation?.on) return;
+    const fit = () => {
+      const el = phoneRef.current;
+      if (!el || !el.offsetHeight) return;
+      setPhoneScale(Math.min((window.innerHeight * 0.92) / el.offsetHeight, (window.innerWidth * 0.9) / el.offsetWidth));
+    };
+    fit();
+    const again = setTimeout(fit, 50);
+    window.addEventListener('resize', fit);
+    return () => {
+      clearTimeout(again);
+      window.removeEventListener('resize', fit);
+    };
+  }, [presentation, state]);
+
   if (!state || !analysis) {
     return <main className="p-10 text-[13px] text-[color:var(--color-ink-40)]">…</main>;
   }
@@ -188,6 +237,27 @@ export function Simulator() {
     setJustShared(true);
     if (shareTimer.current) clearTimeout(shareTimer.current);
     shareTimer.current = setTimeout(() => setJustShared(false), 2_000);
+  }
+
+  if (presentation?.on && priced) {
+    return (
+      <main className="fixed inset-0 flex items-center justify-center overflow-hidden" style={{ background: '#efeae2' }}>
+        {/* Scaled with a transform, which never moves the layout: the phone stays dead centre at any window size. */}
+        <div ref={phoneRef} style={{ transform: `scale(${phoneScale})`, transformOrigin: 'center center' }}>
+          <PhoneFrame
+            messages={state.messages}
+            priced={priced}
+            locale={state.locale}
+            dict={dict}
+            onOpenTrace={setTrace}
+            onRemove={removeMessage}
+            highlighted={highlighted}
+            presentation
+            contactName={presentation.contact}
+          />
+        </div>
+      </main>
+    );
   }
 
   return (
