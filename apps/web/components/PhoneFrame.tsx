@@ -156,7 +156,7 @@ export function PhoneFrame({ messages, priced, locale, dict, onOpenTrace, onRemo
           }}
         >
           {items.length === 0 ? (
-            <p className="m-auto max-w-[80%] py-16 text-center text-[12px] text-white/40">{dict.emptyConversation}</p>
+            presentation ? null : <p className="m-auto max-w-[80%] py-16 text-center text-[12px] text-white/40">{dict.emptyConversation}</p>
           ) : (
             <ul className="space-y-1">{items}</ul>
           )}

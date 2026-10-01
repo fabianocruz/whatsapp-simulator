@@ -218,8 +218,20 @@ function OrderSummary({ content }: { content: Order }) {
  */
 function OrderAction({ content }: { content: Order }) {
   const [open, setOpen] = useState(false);
+  const [autoCopied, setAutoCopied] = useState(false);
   const [root, setRoot] = useState<HTMLElement | null>(null);
   useEffect(() => setRoot(document.getElementById('wa-sheet-root')), []);
+  // Presentation mode plays the person's gesture for the camera: open the sheet, copy the Pix code, go back to
+  // the chat. Nobody has to click on cue, and no mouse pointer crosses a phone screen.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('apresentacao') !== '1') return;
+    const timers = [
+      setTimeout(() => setOpen(true), 2000),
+      setTimeout(() => setAutoCopied(true), 5000),
+      setTimeout(() => setOpen(false), 7500),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, []);
   return (
     <>
       <button type="button" className="block w-full" onClick={() => setOpen(true)}>
@@ -232,13 +244,16 @@ function OrderAction({ content }: { content: Order }) {
           }
         />
       </button>
-      {open && root && createPortal(<OrderSheet content={content} onClose={() => setOpen(false)} />, root)}
+      {open && root && createPortal(<OrderSheet content={content} copiedPix={autoCopied} onClose={() => setOpen(false)} />, root)}
     </>
   );
 }
 
-function OrderSheet({ content, onClose }: { content: Order; onClose: () => void }) {
+function OrderSheet({ content, copiedPix = false, onClose }: { content: Order; copiedPix?: boolean; onClose: () => void }) {
   const [copied, setCopied] = useState<string | null>(null);
+  useEffect(() => {
+    if (copiedPix) setCopied('pix');
+  }, [copiedPix]);
   const copy = (label: string, value: string) => {
     void navigator.clipboard?.writeText(value).catch(() => {});
     setCopied(label);

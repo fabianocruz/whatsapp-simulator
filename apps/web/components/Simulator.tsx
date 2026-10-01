@@ -179,8 +179,28 @@ export function Simulator() {
   const [presentation, setPresentation] = useState<{ on: boolean; contact: string } | null>(null);
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
-    setPresentation({ on: q.get('apresentacao') === '1', contact: q.get('contato') ?? 'Dyvit Simulator' });
+    const on = q.get('apresentacao') === '1';
+    const contact = q.get('contato') ?? 'Dyvit Simulator';
+    setPresentation({ on, contact });
+
   }, []);
+  // The window title is on camera in presentation mode: it names the chat, not the simulator. Next writes
+  // its own metadata title back after hydration, so the chat's name is re-applied whenever the head changes.
+  useEffect(() => {
+    if (!presentation?.on) return;
+    const want = presentation.contact;
+    const apply = () => {
+      if (document.title !== want) document.title = want;
+    };
+    apply();
+    const observer = new MutationObserver(apply);
+    observer.observe(document.head, { subtree: true, childList: true, characterData: true });
+    const timer = setInterval(apply, 500);
+    return () => {
+      observer.disconnect();
+      clearInterval(timer);
+    };
+  }, [presentation]);
   useEffect(() => {
     if (presentation?.on && state && liveStatus === 'off') toggleLive();
   }, [presentation, state, liveStatus, toggleLive]);
