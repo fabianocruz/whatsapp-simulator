@@ -66,6 +66,32 @@ describe('fromGraphSendRequest', () => {
     expect(fromGraphSendRequest({ type: 'interactive', interactive: { type: 'flow' } }, opts).contentType).toBe('flow');
   });
 
+  it('labels a cta_url button with display_text and carries the url', () => {
+    const message = fromGraphSendRequest(
+      {
+        type: 'interactive',
+        interactive: {
+          type: 'cta_url',
+          body: { text: 'Tap the button below to see available dates.' },
+          action: { name: 'cta_url', parameters: { display_text: 'See Dates', url: 'https://example.com/dates' } },
+        },
+      },
+      opts,
+    );
+    expect(message.contentType).toBe('cta_url');
+    expect(message.content).toEqual({
+      kind: 'buttons',
+      body: 'Tap the button below to see available dates.',
+      buttons: [{ type: 'url', text: 'See Dates', url: 'https://example.com/dates' }],
+    });
+  });
+
+  it('falls back to a default label and no url when cta_url parameters are missing', () => {
+    const message = fromGraphSendRequest({ type: 'interactive', interactive: { type: 'cta_url' } }, opts);
+    expect(message.content).toMatchObject({ buttons: [{ type: 'url', text: 'Abrir link' }] });
+    expect((message.content as { buttons: Array<{ url?: string }> }).buttons[0]!.url).toBeUndefined();
+  });
+
   it.each(['image', 'audio', 'video', 'document', 'sticker', 'location'])('maps %s media sends', (type) => {
     expect(fromGraphSendRequest({ type }, opts).contentType).toBe(type);
   });

@@ -55,7 +55,7 @@ export interface GraphSendRequest {
       button?: string;
       sections?: Array<{ title?: string; rows?: Array<{ id?: string; title?: string; description?: string }> }>;
       name?: string;
-      parameters?: { flow_cta?: string; flow_name?: string };
+      parameters?: { flow_cta?: string; flow_name?: string; display_text?: string; url?: string };
     };
   };
   [key: string]: unknown;
@@ -226,7 +226,13 @@ function contentOf(request: GraphSendRequest, type: string): MessageContent | un
         ...(headerText ? { header: { type: 'text' as const, text: headerText } } : {}),
         body,
         ...(footer ? { footer } : {}),
-        buttons: [{ type: 'url', text: it.action?.parameters?.flow_cta ?? 'Abrir link' }],
+        buttons: [
+          {
+            type: 'url',
+            text: it.action?.parameters?.display_text ?? it.action?.parameters?.flow_cta ?? 'Abrir link',
+            ...(it.action?.parameters?.url ? { url: it.action.parameters.url } : {}),
+          },
+        ],
       };
     }
 
