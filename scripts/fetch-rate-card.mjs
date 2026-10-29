@@ -34,20 +34,23 @@ const MARKET_NAMES = {
 const CALLING_CODES = { BR: '+55' };
 
 /**
- * The endpoint is nonce-protected. Both nonces are embedded in the pricing page, and the
- * page's own script sends one as a query parameter and the other as a header.
+ * Reads the endpoint's address off the pricing page, the same place the page's own script
+ * reads it. The page carries more than one `restUrl` (a language banner has its own), so
+ * this takes the one that ends in `/pricing`, with or without escaped slashes.
+ *
+ * Through at least 1 October 2026 the endpoint also asked for two nonces embedded in the page. The page
+ * dropped them and its script now calls the endpoint plainly, so this does too; if Meta
+ * puts a check back, the request fails with that status instead of passing silently.
  */
 async function openSession() {
   const response = await fetch(PRICING_PAGE, { headers: { 'user-agent': USER_AGENT } });
   if (!response.ok) throw new Error(`pricing page returned ${response.status}`);
   const html = await response.text();
-  const restUrl = html.match(/"restUrl":"([^"]+)"/)?.[1]?.replace(/\\\//g, '/');
-  const restNonce = html.match(/"restNonce":"([a-f0-9]+)"/)?.[1];
-  const wpNonce = html.match(/"wpNonce":"([a-f0-9]+)"/)?.[1];
-  if (!restUrl || !restNonce || !wpNonce) {
-    throw new Error('could not read the pricing endpoint or its nonces from the page; the page markup changed');
+  const restUrl = html.match(/"restUrl":"([^"]*?\\?\/pricing)"/)?.[1]?.replace(/\\\//g, '/');
+  if (!restUrl) {
+    throw new Error('could not read the pricing endpoint from the page; the page markup changed');
   }
-  return { restUrl, restNonce, wpNonce };
+  return { restUrl };
 }
 
 async function fetchCategory(session, market, currency, category) {
@@ -55,9 +58,8 @@ async function fetchCategory(session, market, currency, category) {
   url.searchParams.set('market', market);
   url.searchParams.set('currency', currency);
   url.searchParams.set('category', category);
-  url.searchParams.set('_wab_nonce', session.restNonce);
   const response = await fetch(url, {
-    headers: { 'user-agent': USER_AGENT, accept: 'application/json', 'X-WP-Nonce': session.wpNonce, referer: PRICING_PAGE },
+    headers: { 'user-agent': USER_AGENT, accept: 'application/json', referer: PRICING_PAGE },
   });
   const body = await response.text();
   if (!response.ok) throw new Error(`${category} ${market}/${currency}: ${response.status} ${body}`);
