@@ -539,6 +539,42 @@ describe('local Cloud API emulator', () => {
   });
 
   /**
+   * The conversation picker pins the stream with ?key. The pinned client gets only that
+   * conversation's messages, and a list-only frame when another one changes, so the picker
+   * learns about a new customer without the screen jumping to it.
+   */
+  it('a stream pinned with ?key gets its conversation, and only the list for the others', async () => {
+    const time = clock('2026-09-01T10:00:00.000Z');
+    const base = await start({ port: 0, asOf: '2026-09-01', now: time.now, log: () => {} });
+    const a = `${PHONE_NUMBER_ID}:5511999999999`;
+    const b = `${PHONE_NUMBER_ID}:5511888888888`;
+    await post(base, '/_sim/inbound', { phone_number_id: PHONE_NUMBER_ID, from: RECIPIENT, text: 'Oi de A' });
+
+    const controller = new AbortController();
+    const stream = await fetch(`${base}/_sim/events?key=${encodeURIComponent(a)}`, { signal: controller.signal });
+    const reader = stream.body!.getReader();
+    let buffer = '';
+    const nextFrame = async (): Promise<any> => {
+      while (!buffer.includes('\n\n')) buffer += new TextDecoder().decode((await reader.read()).value);
+      const cut = buffer.indexOf('\n\n');
+      const frame = buffer.slice(0, cut);
+      buffer = buffer.slice(cut + 2);
+      return JSON.parse(frame.replace(/^data: /, ''));
+    };
+
+    expect(await nextFrame()).toMatchObject({ key: a, keys: [a] });
+
+    await post(base, '/_sim/inbound', { phone_number_id: PHONE_NUMBER_ID, from: '+5511888888888', text: 'Oi de B' });
+    expect(await nextFrame()).toEqual({ keys: [a, b] });
+
+    await post(base, '/_sim/inbound', { phone_number_id: PHONE_NUMBER_ID, from: RECIPIENT, text: 'De novo A' });
+    const own = await nextFrame();
+    controller.abort();
+    expect(own.key).toBe(a);
+    expect(own.messages.map((m: any) => m.bodyPreview)).toEqual(['Oi de A', 'De novo A']);
+  });
+
+  /**
    * The conversation clock runs backwards only when a test asks it to, and Meta's never
    * does. A customer message left "in the future" by an earlier run keeps its window open,
    * so the emulator says so and offers a clean slate.

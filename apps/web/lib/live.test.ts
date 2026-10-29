@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { sendInbound } from './live';
+import { eventsUrl, sendInbound } from './live';
 
 function respondWith(status: number) {
   return vi.fn(async () => new Response('{}', { status })) as unknown as typeof fetch & ReturnType<typeof vi.fn>;
@@ -48,5 +48,17 @@ describe('sendInbound', () => {
       status: 502,
       message: null,
     });
+  });
+});
+
+describe('eventsUrl', () => {
+  it('follows whichever conversation is active when no key is picked', () => {
+    expect(eventsUrl('http://127.0.0.1:4290/', null)).toBe('http://127.0.0.1:4290/_sim/events');
+  });
+
+  it('pins the stream to the picked conversation', () => {
+    expect(eventsUrl('http://127.0.0.1:4290', '109876543210:5511999999999')).toBe(
+      'http://127.0.0.1:4290/_sim/events?key=109876543210%3A5511999999999',
+    );
   });
 });

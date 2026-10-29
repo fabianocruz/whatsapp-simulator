@@ -217,11 +217,15 @@ export function createEmulatorServer(options: ServeOptions): Server {
     if (subscribers.size === 0) return;
     const session = sessions.get(key);
     if (!session) return;
-    const payload = JSON.stringify({ key, messages: session.messages, priced: price(session) });
+    const keys = [...sessions.keys()];
+    const payload = JSON.stringify({ key, messages: session.messages, priced: price(session), keys });
+    // A client pinned to another conversation still hears that this one exists, so its
+    // conversation picker never goes stale; it gets the list, not the messages.
+    const keysOnly = JSON.stringify({ keys });
     for (const subscriber of subscribers) {
-      if (subscriber.key !== null && subscriber.key !== key) continue;
+      const other = subscriber.key !== null && subscriber.key !== key;
       try {
-        subscriber.response.write(`data: ${payload}\n\n`);
+        subscriber.response.write(`data: ${other ? keysOnly : payload}\n\n`);
       } catch {
         // A client that went away is dropped on its own 'close' event; ignore the write.
       }
@@ -230,11 +234,13 @@ export function createEmulatorServer(options: ServeOptions): Server {
 
   /** Tells the UIs watching `key` (or every UI, for null) that the conversation is gone. */
   function broadcastCleared(key: string | null): void {
-    const payload = JSON.stringify({ key: null, messages: [], priced: null });
+    const keys = [...sessions.keys()];
+    const payload = JSON.stringify({ key: null, messages: [], priced: null, keys });
+    const keysOnly = JSON.stringify({ keys });
     for (const subscriber of subscribers) {
-      if (key !== null && subscriber.key !== null && subscriber.key !== key) continue;
+      const other = key !== null && subscriber.key !== null && subscriber.key !== key;
       try {
-        subscriber.response.write(`data: ${payload}\n\n`);
+        subscriber.response.write(`data: ${other ? keysOnly : payload}\n\n`);
       } catch {
         // Dropped on its own 'close' event.
       }
@@ -615,10 +621,10 @@ export function createEmulatorServer(options: ServeOptions): Server {
           const existingKey = key ?? [...sessions.keys()][0] ?? null;
           if (existing && existingKey) {
             response.write(
-              `data: ${JSON.stringify({ key: existingKey, messages: existing.messages, priced: price(existing) })}\n\n`,
+              `data: ${JSON.stringify({ key: existingKey, messages: existing.messages, priced: price(existing), keys: [...sessions.keys()] })}\n\n`,
             );
           } else {
-            response.write(`data: ${JSON.stringify({ key: null, messages: [], priced: null })}\n\n`);
+            response.write(`data: ${JSON.stringify({ key: null, messages: [], priced: null, keys: [...sessions.keys()] })}\n\n`);
           }
           // A comment every 25s keeps proxies and browsers from closing an idle stream.
           const ping = setInterval(() => response.write(': ping\n\n'), 25_000);
