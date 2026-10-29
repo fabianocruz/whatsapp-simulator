@@ -99,20 +99,39 @@ function Buttons({ buttons }: { buttons: MessageButton[] }) {
   if (buttons.length === 0) return null;
   return (
     <div>
-      {buttons.map((button, index) => (
-        <div
-          key={`${button.text}-${index}`}
-          className="flex items-center justify-center gap-1.5 border-t px-3 py-2 text-[13px] text-[#53BDEB]"
-          style={{ borderColor: 'rgba(255,255,255,0.12)' }}
-        >
-          {BUTTON_ICON[button.type] && (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d={BUTTON_ICON[button.type]!} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-          <span className="truncate">{button.text}</span>
-        </div>
-      ))}
+      {buttons.map((button, index) => {
+        const inner = (
+          <>
+            {BUTTON_ICON[button.type] && (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d={BUTTON_ICON[button.type]!} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+            <span className="truncate">{button.text}</span>
+          </>
+        );
+        const className = 'flex items-center justify-center gap-1.5 border-t px-3 py-2 text-[13px] text-[#53BDEB]';
+        const style = { borderColor: 'rgba(255,255,255,0.12)' };
+        // A url button that knows its destination opens it, the way tapping it on a phone would.
+        // Only http(s): the url comes straight from whatever payload the emulator received.
+        return button.type === 'url' && button.url && /^https?:\/\//i.test(button.url) ? (
+          <a
+            key={`${button.text}-${index}`}
+            href={button.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={button.url}
+            className={`${className} hover:underline`}
+            style={style}
+          >
+            {inner}
+          </a>
+        ) : (
+          <div key={`${button.text}-${index}`} className={className} style={style}>
+            {inner}
+          </div>
+        );
+      })}
     </div>
   );
 }
