@@ -24,6 +24,12 @@ export interface LiveConnection {
   close: () => void;
 }
 
+/** The stream for one conversation, or for whichever is active when `key` is null. */
+export function eventsUrl(url: string, key: string | null): string {
+  const base = `${url.replace(/\/$/, '')}/_sim/events`;
+  return key ? `${base}?key=${encodeURIComponent(key)}` : base;
+}
+
 /**
  * Opens the stream. `onSnapshot` fires with the full conversation on every change; the
  * emulator sends state rather than deltas, so a client that connects mid-run or drops a
@@ -34,14 +40,17 @@ export function connectLive(
   handlers: {
     onSnapshot: (snapshot: LiveSnapshot) => void;
     onStatus: (status: LiveStatus) => void;
+    /** Every conversation the emulator holds, sent with each frame. */
+    onKeys?: (keys: string[]) => void;
   },
+  key: string | null = null,
 ): LiveConnection {
   let source: EventSource | null = null;
   let closed = false;
 
   try {
     handlers.onStatus('connecting');
-    source = new EventSource(`${url.replace(/\/$/, '')}/_sim/events`);
+    source = new EventSource(eventsUrl(url, key));
 
     source.onopen = () => {
       if (!closed) handlers.onStatus('connected');
@@ -50,8 +59,11 @@ export function connectLive(
     source.onmessage = (event) => {
       if (closed) return;
       try {
-        const payload = JSON.parse(event.data) as { key: string | null; messages: SimMessage[] };
-        handlers.onSnapshot({ key: payload.key, messages: payload.messages ?? [] });
+        const payload = JSON.parse(event.data) as { key?: string | null; messages?: SimMessage[]; keys?: string[] };
+        if (Array.isArray(payload.keys)) handlers.onKeys?.(payload.keys);
+        // A frame with only the list is news about another conversation, not this one.
+        if (payload.messages === undefined) return;
+        handlers.onSnapshot({ key: payload.key ?? null, messages: payload.messages });
         handlers.onStatus('connected');
       } catch {
         // A malformed frame is not worth tearing the connection down for.

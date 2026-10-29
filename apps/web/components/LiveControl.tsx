@@ -10,6 +10,10 @@ interface Props {
   messageCount: number;
   onUrlChange: (url: string) => void;
   onToggle: () => void;
+  /** Conversation keys the emulator holds, `<phone_number_id>:<customer digits>`. */
+  conversations: string[];
+  pinned: string | null;
+  onPick: (key: string | null) => void;
 }
 
 const DOT: Record<LiveStatus, string> = {
@@ -25,7 +29,7 @@ const DOT: Record<LiveStatus, string> = {
  * The live dot is the one place in this product where emerald means "running", which is
  * exactly what the brand reserves it for.
  */
-export function LiveControl({ dict, status, url, messageCount, onUrlChange, onToggle }: Props) {
+export function LiveControl({ dict, status, url, messageCount, onUrlChange, onToggle, conversations, pinned, onPick }: Props) {
   const label: Record<LiveStatus, string> = {
     off: dict.liveOff,
     connecting: dict.liveConnecting,
@@ -72,9 +76,34 @@ export function LiveControl({ dict, status, url, messageCount, onUrlChange, onTo
         </button>
       </div>
 
+      {on && conversations.length > 0 && (
+        <label className="mt-3 flex items-center gap-2 text-[12px] text-[color:var(--color-ink-70)]">
+          {dict.liveConversation}
+          <select
+            aria-label={dict.liveConversation}
+            value={pinned ?? ''}
+            onChange={(event) => onPick(event.target.value || null)}
+            className="mono min-w-0 flex-1 rounded-[var(--radius-r)] border border-[color:var(--color-ink-15)] bg-white px-2 py-1 text-[12px]"
+          >
+            <option value="">{dict.liveFollowLatest}</option>
+            {conversations.map((key) => (
+              <option key={key} value={key}>
+                {conversationLabel(key)}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
       <p className="mt-2 text-[12px] leading-relaxed text-[color:var(--color-ink-70)]">
         {status === 'connected' ? dict.liveReadOnly : status === 'error' ? dict.liveError : dict.liveHint}
       </p>
     </section>
   );
+}
+
+/** `109876543210:5511999999999` reads as `+5511999999999 · 109876543210`: the customer first. */
+function conversationLabel(key: string): string {
+  const cut = key.indexOf(':');
+  return cut < 0 ? key : `+${key.slice(cut + 1)} · ${key.slice(0, cut)}`;
 }

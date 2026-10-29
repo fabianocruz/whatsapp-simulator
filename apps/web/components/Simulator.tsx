@@ -51,6 +51,9 @@ export function Simulator() {
   const [liveStatus, setLiveStatus] = useState<LiveStatus>('off');
   const [liveUrl, setLiveUrl] = useState(DEFAULT_EMULATOR_URL);
   const [liveKey, setLiveKey] = useState<string | null>(null);
+  const [liveKeys, setLiveKeys] = useState<string[]>([]);
+  // The conversation picked by hand; null follows whichever the emulator touched last.
+  const [livePinned, setLivePinned] = useState<string | null>(null);
   const liveConnection = useRef<LiveConnection | null>(null);
 
   useEffect(() => {
@@ -85,21 +88,37 @@ export function Simulator() {
     liveConnection.current?.close();
   }, []);
 
+  const connect = useCallback(
+    (key: string | null) => {
+      liveConnection.current?.close();
+      setLivePinned(key);
+      liveConnection.current = connectLive(
+        liveUrl,
+        {
+          onStatus: setLiveStatus,
+          onKeys: setLiveKeys,
+          onSnapshot: (snapshot) => {
+            setLiveKey(snapshot.key);
+            setState((current) => (current ? { ...current, messages: snapshot.messages } : current));
+          },
+        },
+        key,
+      );
+    },
+    [liveUrl],
+  );
+
   const toggleLive = useCallback(() => {
     if (liveConnection.current) {
       liveConnection.current.close();
       liveConnection.current = null;
       setLiveKey(null);
+      setLiveKeys([]);
+      setLivePinned(null);
       return;
     }
-    liveConnection.current = connectLive(liveUrl, {
-      onStatus: setLiveStatus,
-      onSnapshot: (snapshot) => {
-        setLiveKey(snapshot.key);
-        setState((current) => (current ? { ...current, messages: snapshot.messages } : current));
-      },
-    });
-  }, [liveUrl]);
+    connect(null);
+  }, [connect]);
 
   const patch = useCallback((change: Partial<SimulatorState>) => {
     setState((current) => (current ? { ...current, ...change } : current));
@@ -252,6 +271,9 @@ export function Simulator() {
                 messageCount={state.messages.length}
                 onUrlChange={setLiveUrl}
                 onToggle={toggleLive}
+                conversations={liveKeys}
+                pinned={livePinned}
+                onPick={connect}
               />
 
               <div className="grid gap-6 sm:grid-cols-2">
