@@ -76,3 +76,46 @@ export function connectLive(
     },
   };
 }
+
+export type InboundResult =
+  | { ok: true }
+  | { ok: false; reason: 'unreachable' }
+  | { ok: false; reason: 'http'; status: number; message: string | null };
+
+/**
+ * Speaks as the customer of the conversation on screen.
+ *
+ * The emulator keys a conversation as `<phone_number_id>:<customer digits>`, the same key
+ * the stream carries, so splitting it gives back the identity `/_sim/inbound` asks for and
+ * the message lands in that conversation. Nothing is added to the screen here: the message
+ * shows up when the emulator broadcasts it, like every other one.
+ */
+export async function sendInbound(
+  url: string,
+  key: string,
+  text: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<InboundResult> {
+  const cut = key.indexOf(':');
+  const body = { phone_number_id: key.slice(0, cut), from: key.slice(cut + 1), text };
+  let response: Response;
+  try {
+    response = await fetchImpl(`${url.replace(/\/$/, '')}/_sim/inbound`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return { ok: false, reason: 'unreachable' };
+  }
+  if (response.ok) return { ok: true };
+  // The emulator answers a refusal with a Graph-shaped error that says why; keep it.
+  let message: string | null = null;
+  try {
+    const payload = (await response.json()) as { error?: { message?: unknown } };
+    message = typeof payload.error?.message === 'string' ? payload.error.message : null;
+  } catch {
+    // Not JSON: the status alone is all there is.
+  }
+  return { ok: false, reason: 'http', status: response.status, message };
+}

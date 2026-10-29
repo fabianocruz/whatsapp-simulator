@@ -65,6 +65,9 @@ node examples/app-cobranca/index.mjs   # terminal 3: uma régua de cobrança de 
 No simulador, ligue **Ao vivo** e aponte para `http://127.0.0.1:4290`. As mensagens do app
 aparecem no telefone conforme são enviadas, cada uma com o chip de preço e o motivo.
 
+Com o Ao vivo ligado, o campo **Falar como o cliente** posta em `/_sim/inbound` do emulador,
+na conversa aberta. A mensagem aparece no telefone quando o emulador a devolve pelo stream.
+
 Conectar antes de rodar o app é mais bonito de ver, mas não é obrigatório: o emulador
 reenvia o estado da conversa a quem conecta, então ligar o Ao vivo depois mostra tudo que
 já aconteceu.

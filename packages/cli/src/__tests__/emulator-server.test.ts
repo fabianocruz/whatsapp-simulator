@@ -508,6 +508,37 @@ describe('local Cloud API emulator', () => {
   });
 
   /**
+   * The live composer in the web app speaks as the customer by splitting the key the stream
+   * carries into `phone_number_id` and `from`. That only works if the split lands back in the
+   * same conversation, `+` and all.
+   */
+  it('an inbound built from the stream key lands in the conversation the stream shows', async () => {
+    const time = clock('2026-09-01T10:00:00.000Z');
+    const base = await start({ port: 0, asOf: '2026-09-01', now: time.now, log: () => {} });
+    await post(base, '/_sim/inbound', { phone_number_id: PHONE_NUMBER_ID, from: RECIPIENT, text: 'Oi' });
+
+    const controller = new AbortController();
+    const stream = await fetch(`${base}/_sim/events`, { signal: controller.signal });
+    const reader = stream.body!.getReader();
+    const first = new TextDecoder().decode((await reader.read()).value);
+    controller.abort();
+    const { key } = JSON.parse(first.replace(/^data: /, '')) as { key: string };
+
+    const cut = key.indexOf(':');
+    const reply = await post(base, '/_sim/inbound', {
+      phone_number_id: key.slice(0, cut),
+      from: key.slice(cut + 1),
+      text: 'Segunda',
+    });
+    expect(reply.status).toBe(200);
+
+    const state = (await (await fetch(`${base}/_sim/state?key=${key}`)).json()) as any;
+    expect(state.messages.map((m: any) => m.bodyPreview)).toEqual(['Oi', 'Segunda']);
+    const health = (await (await fetch(`${base}/health`)).json()) as any;
+    expect(health.conversations).toBe(1);
+  });
+
+  /**
    * The conversation clock runs backwards only when a test asks it to, and Meta's never
    * does. A customer message left "in the future" by an earlier run keeps its window open,
    * so the emulator says so and offers a clean slate.

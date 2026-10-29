@@ -22,6 +22,7 @@ import {
 } from '../lib/scenario-state';
 import { decodeState, encodeState, shareUrl } from '../lib/url-hash';
 import { DEFAULT_EMULATOR_URL, connectLive, type LiveConnection, type LiveStatus } from '../lib/live';
+import { LiveComposer } from './LiveComposer';
 import { LiveControl } from './LiveControl';
 import { Composer } from './Composer';
 import { Notices } from './Notices';
@@ -49,6 +50,7 @@ export function Simulator() {
   // Live mode: the conversation comes from a local emulator instead of the composer.
   const [liveStatus, setLiveStatus] = useState<LiveStatus>('off');
   const [liveUrl, setLiveUrl] = useState(DEFAULT_EMULATOR_URL);
+  const [liveKey, setLiveKey] = useState<string | null>(null);
   const liveConnection = useRef<LiveConnection | null>(null);
 
   useEffect(() => {
@@ -71,12 +73,12 @@ export function Simulator() {
   // Paused while attached to the emulator: the conversation belongs to the running app,
   // and rewriting the URL on every inbound message would fight the browser history.
   useEffect(() => {
-    if (!state || liveStatus === 'connected') return;
+    if (!state || liveStatus !== 'off') return;
     const encoded = `#s=${encodeState(state)}`;
     if (window.location.hash !== encoded) {
       window.history.replaceState(null, '', encoded);
     }
-  }, [state]);
+  }, [state, liveStatus]);
 
   useEffect(() => () => {
     if (shareTimer.current) clearTimeout(shareTimer.current);
@@ -87,11 +89,13 @@ export function Simulator() {
     if (liveConnection.current) {
       liveConnection.current.close();
       liveConnection.current = null;
+      setLiveKey(null);
       return;
     }
     liveConnection.current = connectLive(liveUrl, {
       onStatus: setLiveStatus,
       onSnapshot: (snapshot) => {
+        setLiveKey(snapshot.key);
         setState((current) => (current ? { ...current, messages: snapshot.messages } : current));
       },
     });
@@ -251,11 +255,10 @@ export function Simulator() {
               />
 
               <div className="grid gap-6 sm:grid-cols-2">
-                {liveStatus === 'connected' ? (
-                  <div className="rounded-[var(--radius-r-lg)] border border-[color:var(--color-ink-15)] bg-[color:var(--color-ink-04)] p-4">
-                    <h3 className="section-label mb-2">{dict.composer}</h3>
-                    <p className="text-[12px] leading-relaxed text-[color:var(--color-ink-40)]">{dict.liveReadOnly}</p>
-                  </div>
+                {/* Kept through a reconnect, so a dropped stream shows its error here
+                    instead of swapping in the hand composer and losing what was typed. */}
+                {liveStatus !== 'off' ? (
+                  <LiveComposer dict={dict} url={liveUrl} status={liveStatus} conversationKey={liveKey} />
                 ) : (
                   <Composer dict={dict} defaultSentAt={nextTimestamp(state.messages)} onAdd={addMessage} />
                 )}
